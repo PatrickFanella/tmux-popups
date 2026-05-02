@@ -1,0 +1,27 @@
+# id	direct_key	menu_key	title	width	height	command
+help	C-h	H	popup help	80%	80%	scripts/popup-help.sh
+chat	C-g	g	quick chat	80%	80%	scripts/tools/chat.sh
+opencode	C-o	o	opencode	90%	85%	scripts/tools/opencode.sh
+shell	C-t	Enter	shell	75%	75%	-
+tasks	-	T	tasks	80%	80%	scripts/tools/tasks.sh
+notes	C-n	N	notes	80%	80%	scripts/tools/notes.sh
+docs	-	M	docs	80%	80%	scripts/tools/docs.sh
+calendar	-	A	calendar	80%	80%	scripts/tools/calendar.sh
+calc	-	=	calc	75%	75%	scripts/tools/calc.sh
+ssh	-	S	ssh	80%	80%	scripts/tools/ssh.sh
+clipboard	-	C	clipboard	80%	80%	scripts/tools/clipboard.sh
+info	-	I	info	80%	80%	scripts/tools/info.sh
+timer	-	P	timer	75%	75%	scripts/tools/timer.sh
+logs	-	L	logs	90%	85%	scripts/tools/logs.sh
+watch	-	W	watch	90%	85%	scripts/tools/watch.sh
+markdown	-	G	markdown	90%	85%	scripts/tools/markdown.sh
+lazygit	C-y	y	lazygit	80%	80%	scripts/tools/lazygit.sh
+yazi	C-r	r	yazi	80%	80%	scripts/tools/yazi.sh
+ferrosonic	C-f	-	ferrosonic	80%	80%	scripts/tools/ferrosonic.sh
+sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
+keys	C-b	b	tmux keys	90%	85%	scripts/tools/keys.sh
+zshrc	C-z	z	~/.zshrc	80%	80%	scripts/tools/zshrc.sh
+tmux-local	-	t	tmux.local.conf	80%	80%	scripts/tools/tmux-local.sh
+home	-	h	home	80%	80%	scripts/tools/home.sh
+projects	-	p	projects	80%	80%	scripts/tools/projects.sh
+downloads	-	d	downloads	80%	80%	scripts/tools/downloads.sh
