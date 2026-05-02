@@ -2,5 +2,4 @@
 help	C-h	H	popup help	80%	80%	scripts/popup-help.sh
 shell	C-t	Enter	shell	75%	75%	-
 timer	-	P	timer	75%	75%	scripts/tools/timer.sh
-sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
 keys	C-b	b	tmux keys	90%	85%	scripts/tools/keys.sh

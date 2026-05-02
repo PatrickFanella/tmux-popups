@@ -1,6 +1,8 @@
 # Optional popups with extra dependencies.
 # Copy rows into ../popups.tsv, then reload tmux.
 # id	direct_key	menu_key	title	width	height	command
+# Native tmux session picker. Prefer tmux-sessionx if you use it.
+sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
 chat	C-g	g	quick chat	80%	80%	scripts/tools/chat.sh
 opencode	C-o	o	opencode	90%	85%	scripts/tools/opencode.sh
 tasks	-	T	tasks	80%	80%	scripts/tools/tasks.sh

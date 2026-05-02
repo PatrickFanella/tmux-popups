@@ -49,11 +49,28 @@ These defaults avoid non-core app dependencies.
 | `Prefix+d` | Quick menu |
 | `Prefix+C-h` | Popup help |
 | `Prefix+C-t` | Shell |
-| `Prefix+C-j` | tmux sessions (`tmux choose-tree`) |
 | `Prefix+C-b` | tmux key list |
 | `Prefix+C-S-r` | reload tmux config |
 
 The quick menu also includes the timer popup.
+
+## Session management
+
+`tmux-popups` does not bind a session picker by default. For session switching, use [`tmux-sessionx`](https://github.com/omerxx/tmux-sessionx) beside this plugin.
+
+Example TPM config:
+
+```tmux
+set -g @plugin 'omerxx/tmux-sessionx'
+set -g @sessionx-bind 'j'
+set -g @sessionx-prefix 'on'
+set -g @sessionx-window-height '80%'
+set -g @sessionx-window-width '60%'
+```
+
+Then `Prefix+j` opens sessionx.
+
+If you prefer tmux's built-in session picker instead, copy the `sessions` row from `examples/popups.optional.tsv` into `popups.tsv`.
 
 ## Add, create, or edit popups
 
@@ -156,6 +173,12 @@ examples/popups.optional.tsv
 
 Copy rows you want into `popups.tsv`, install the matching tool, then reload tmux.
 
+Example: tmux native sessions does not need extra dependencies, but is optional because `tmux-sessionx` is recommended for session management:
+
+```tsv
+sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
+```
+
 Example: quick chat needs [`ocq`](https://github.com/PatrickFanella/ocq):
 
 ```tsv
@@ -193,6 +216,7 @@ tmux source-file ~/.tmux.conf
 
 Rows in `examples/popups.optional.tsv` can use:
 
+- `tmux choose-tree` for native tmux session switching
 - [`ocq`](https://github.com/PatrickFanella/ocq) for quick OpenCode chat
 - `opencode`
 - `task` / Taskwarrior
