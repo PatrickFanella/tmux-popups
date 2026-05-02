@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -u
+# shellcheck source=../lib.sh
+# shellcheck disable=SC2154
 . "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 setup_colors
 

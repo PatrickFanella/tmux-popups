@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck tmux
+      - name: Bash syntax
+        run: |
+          bash -n tmux-popups.tmux
+          for f in scripts/*.sh scripts/tools/*.sh; do
+            bash -n "$f"
+          done
+      - name: ShellCheck
+        run: shellcheck -x -e SC1091,SC2034,SC2086 tmux-popups.tmux scripts/*.sh scripts/tools/*.sh
+      - name: Generate config
+        run: scripts/generate-config.sh

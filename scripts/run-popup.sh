@@ -2,11 +2,9 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-registry="$root/popups.tsv"
-
 id="${1:?popup id required}"
 
-while IFS=$'\t' read -r popup_id direct_key menu_key title width height command; do
+"$root/scripts/list-popups.sh" --tsv | while IFS=$'\t' read -r popup_id direct_key menu_key title width height command; do
   [[ -z "${popup_id:-}" || "$popup_id" == \#* ]] && continue
   [[ "$popup_id" == "$id" ]] || continue
 
@@ -15,7 +13,7 @@ while IFS=$'\t' read -r popup_id direct_key menu_key title width height command;
   fi
 
   exec "$root/$command"
-done <"$registry"
+done
 
 printf 'tmux-popups: unknown popup id: %s\n' "$id" >&2
 printf 'Press Enter to close...'

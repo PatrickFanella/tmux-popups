@@ -1,34 +1,35 @@
 # tmux-popups
 
-Small tmux popup toolkit with a TSV registry, generated bindings, and shell tools.
-
-The default registry is intentionally dependency-light: tmux + shell, with graceful fallback if `less` is missing. Extra popups that need tools like `ocq`, `opencode`, `task`, `fzf`, `yazi`, or `lazygit` live in `examples/popups.optional.tsv` as copy/paste examples.
+Small tmux popup toolkit with a TSV registry, generated bindings, shared shell helpers, dependency checks, and optional local overrides.
 
 ## Features
 
-- `Prefix+d` quick menu generated from `popups.tsv`
-- Direct bindings generated from the same registry
-- One source of truth: `popups.tsv`
-- No build step; Bash scripts plus tmux
+- `Prefix+d` quick menu generated from registry rows
+- Direct bindings generated from the same rows
+- Default registry: `popups.tsv`
+- Local override registry: `~/.config/tmux-popups/popups.local.tsv`
+- Dependency status in help and CLI output
+- Doctor script for common tmux/TPM/config problems
+- Bash-only implementation; no build step
 - Generated config stored at `${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf`
 
 ## Install with TPM
 
-Add to `~/.tmux.conf`:
+Add to `~/.tmux.conf` or your sourced tmux config:
 
 ```tmux
-set -g @plugin 'patrickfanella/tmux-popups'
+set -g @plugin 'PatrickFanella/tmux-popups'
 ```
 
 Reload tmux, then press TPM install key (`prefix + I`).
 
 ## Install manually
 
-Clone somewhere, then run the plugin script from your tmux config:
-
 ```sh
 git clone https://github.com/PatrickFanella/tmux-popups.git ~/.config/tmux/plugins/tmux-popups
 ```
+
+Then source the plugin entrypoint:
 
 ```tmux
 run-shell "$HOME/.config/tmux/plugins/tmux-popups/tmux-popups.tmux"
@@ -40,25 +41,44 @@ Reload tmux:
 tmux source-file ~/.tmux.conf
 ```
 
+## Local development with TPM
+
+Useful when hacking on the plugin but still letting TPM manage load/update keys.
+
+```sh
+git clone https://github.com/PatrickFanella/tmux-popups.git ~/Projects/tools/tmux-popups
+mkdir -p ~/.config/tmux/plugins
+ln -sfn ~/Projects/tools/tmux-popups ~/.config/tmux/plugins/tmux-popups
+```
+
+Keep TPM registration in tmux config:
+
+```tmux
+set -g @plugin 'PatrickFanella/tmux-popups'
+```
+
+TPM will see `tmux-popups`; the symlink points it at your working tree.
+
 ## Default bindings
 
-These defaults avoid non-core app dependencies.
+The default registry includes the full popup set. Some rows need optional tools; dependency status is visible in `Prefix+C-h` and `scripts/list-popups.sh --deps`.
 
 | Key | Popup |
 | --- | --- |
 | `Prefix+d` | Quick menu |
-| `Prefix+C-h` | Popup help |
-| `Prefix+C-t` | Shell |
+| `Prefix+C-h` | Popup help + dependency status |
+| `Prefix+C-g` | quick chat via [`ocq`](https://github.com/PatrickFanella/ocq) |
+| `Prefix+C-o` | opencode |
+| `Prefix+C-t` | shell |
+| `Prefix+C-n` | daily note |
+| `Prefix+C-y` | lazygit |
+| `Prefix+C-r` | yazi |
+| `Prefix+C-f` | ferrosonic |
 | `Prefix+C-b` | tmux key list |
+| `Prefix+C-z` | edit `~/.zshrc` |
 | `Prefix+C-S-r` | reload tmux config |
 
-The quick menu also includes the timer popup.
-
-## Session management
-
-`tmux-popups` does not bind a session picker by default. For session switching, use [`tmux-sessionx`](https://github.com/omerxx/tmux-sessionx) beside this plugin.
-
-Example TPM config:
+Session switching is intentionally left to [`tmux-sessionx`](https://github.com/omerxx/tmux-sessionx). Example:
 
 ```tmux
 set -g @plugin 'omerxx/tmux-sessionx'
@@ -68,54 +88,81 @@ set -g @sessionx-window-height '80%'
 set -g @sessionx-window-width '60%'
 ```
 
-Then `Prefix+j` opens sessionx.
+Then `Prefix+j` opens sessionx. If you prefer tmux's built-in picker, copy the `sessions` row from `examples/popups.optional.tsv`.
 
-If you prefer tmux's built-in session picker instead, copy the `sessions` row from `examples/popups.optional.tsv` into `popups.tsv`.
+## Plugin options
 
-## Add, create, or edit popups
+Set these before the plugin loads:
 
-### 1. Understand the registry
+```tmux
+set -g @tmux-popups-menu-key 'd'
+set -g @tmux-popups-reload-key 'C-S-r'
+set -g @tmux-popups-default-width '80%'
+set -g @tmux-popups-default-height '80%'
+set -g @tmux-popups-local-registry '~/.config/tmux-popups/popups.local.tsv'
+set -g @tmux-popups-enable-vscode 'on'
+set -g @tmux-popups-vscode-command 'code-insiders .'
+```
 
-Edit `popups.tsv`:
+Use `-` in a row's width or height to inherit the default width/height options.
+
+## Registry format
+
+Rows are tab-separated:
 
 ```tsv
 id	direct_key	menu_key	title	width	height	command
 ```
 
-Columns:
-
 | Column | Meaning |
 | --- | --- |
 | `id` | Unique popup id used by `scripts/run-popup.sh` |
 | `direct_key` | Direct tmux binding after prefix, or `-` for none |
-| `menu_key` | Key in `Prefix+d` quick menu, or `-` for none |
+| `menu_key` | Key in quick menu, or `-` for none |
 | `title` | Popup title |
-| `width` | tmux popup width, e.g. `80%` |
-| `height` | tmux popup height, e.g. `80%` |
+| `width` | tmux popup width, e.g. `80%`, or `-` for default |
+| `height` | tmux popup height, e.g. `80%`, or `-` for default |
 | `command` | Plugin-relative script path, or `-` for an interactive shell |
 
-Use tabs between columns. Use `-` for blank/disabled fields.
+Blank lines and lines beginning with `#` are ignored.
 
-### 2. Add a shell-only popup
+## Local override registry
 
-Add this row to `popups.tsv`:
+Default path:
+
+```text
+~/.config/tmux-popups/popups.local.tsv
+```
+
+The plugin merges:
+
+```text
+popups.tsv
+  + popups.local.tsv
+  -> generated bindings
+```
+
+If a local row has the same `id` as a default row, the local row overrides it while keeping the original order. New local ids are appended.
+
+Example local override: move chat to another key and use default popup size:
+
+```tsv
+chat	C-a	a	quick chat	-	-	scripts/tools/chat.sh
+```
+
+Example local-only scratch shell:
 
 ```tsv
 scratch	C-s	s	scratch shell	80%	80%	-
 ```
 
-Reload tmux:
+Reload tmux after edits:
 
 ```sh
 tmux source-file ~/.tmux.conf
 ```
 
-Now use:
-
-- `Prefix+C-s` for the direct popup
-- `Prefix+d`, then `s` from the quick menu
-
-### 3. Create a new popup script
+## Create a popup script
 
 Create `scripts/tools/hello.sh`:
 
@@ -133,98 +180,94 @@ Make it executable:
 chmod +x scripts/tools/hello.sh
 ```
 
-Add a row to `popups.tsv`:
+Add a row to `popups.tsv` or your local registry:
 
 ```tsv
 hello	-	h	hello	75%	75%	scripts/tools/hello.sh
 ```
 
-Reload tmux:
+Reload tmux and open it with `Prefix+d`, then `h`.
 
-```sh
-tmux source-file ~/.tmux.conf
-```
+## Optional examples
 
-Open it with `Prefix+d`, then `h`.
-
-### 4. Edit an existing popup
-
-Change its row in `popups.tsv`, then reload tmux.
-
-Example: make the shell popup larger:
-
-```tsv
-shell	C-t	Enter	shell	90%	85%	-
-```
-
-Reload:
-
-```sh
-tmux source-file ~/.tmux.conf
-```
-
-### 5. Add optional dependency popups
-
-Optional popups are included as examples in:
+Extra rows live in:
 
 ```text
 examples/popups.optional.tsv
 ```
 
-Copy rows you want into `popups.tsv`, install the matching tool, then reload tmux.
+Copy rows into your local registry or `popups.tsv`, install matching tools, then reload tmux.
 
-Example: tmux native sessions does not need extra dependencies, but is optional because `tmux-sessionx` is recommended for session management:
+Examples:
 
 ```tsv
 sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
-```
-
-Example: quick chat needs [`ocq`](https://github.com/PatrickFanella/ocq):
-
-```tsv
 chat	C-g	g	quick chat	80%	80%	scripts/tools/chat.sh
-```
-
-Example: yazi file manager needs `yazi`:
-
-```tsv
 yazi	C-r	r	yazi	80%	80%	scripts/tools/yazi.sh
 ```
 
-Reload after copying examples:
+`chat` needs [`ocq`](https://github.com/PatrickFanella/ocq).
+
+## List and dependency helpers
 
 ```sh
-tmux source-file ~/.tmux.conf
+scripts/list-popups.sh --pretty
+scripts/list-popups.sh --deps
+scripts/list-popups.sh --tsv
+scripts/list-popups.sh --deps-tsv
 ```
 
-### 6. Validate generated config
+`Prefix+C-h` shows the same dependency status inside tmux.
+
+Dependency groups can contain alternatives, e.g. `glow|bat|less` means one of those commands is enough.
+
+## Doctor
 
 Run:
 
 ```sh
-scripts/generate-config.sh
-tmux source-file -n ~/.cache/tmux-popups/generated.conf
+scripts/doctor.sh
 ```
 
-If tmux reports no errors, reload normally:
+It checks:
+
+- tmux availability/version
+- plugin root
+- default/local registries
+- TPM path and local plugin entry
+- TPM registration in tmux config
+- generated config creation
+- `tmux source-file -n` validation
+- per-popup dependency status
+
+Warnings are informational. Failures exit nonzero.
+
+## Validate generated config
 
 ```sh
+scripts/generate-config.sh
+tmux source-file -n ~/.cache/tmux-popups/generated.conf
 tmux source-file ~/.tmux.conf
 ```
 
-## Optional tools
+## CI
 
-Rows in `examples/popups.optional.tsv` can use:
+GitHub Actions runs:
 
-- `tmux choose-tree` for native tmux session switching
+- `bash -n` on plugin scripts
+- ShellCheck
+- config generation smoke test
+
+## Optional tools used by default/extra rows
+
 - [`ocq`](https://github.com/PatrickFanella/ocq) for quick OpenCode chat
 - `opencode`
 - `task` / Taskwarrior
 - `nvim`, `vim`, `vi`, or `$EDITOR`
-- `tldr`, `man`
+- `tldr`, `man`, `less`
 - `khal`, `cal`
 - `python3`
-- `fzf`
+- `ssh`, `fzf`
 - `cliphist`, `wl-copy`, `wl-paste`
 - `newsboat`, `curl`
 - `journalctl`, `tail`, `watch`
@@ -234,21 +277,26 @@ Rows in `examples/popups.optional.tsv` can use:
 ## How it works
 
 ```text
-popups.tsv
+popups.tsv + optional local registry
+  -> scripts/list-popups.sh --tsv
   -> scripts/generate-config.sh
   -> ~/.cache/tmux-popups/generated.conf
   -> tmux source-file
 ```
 
-`scripts/run-popup.sh <id>` reads `popups.tsv` and executes the matching command inside `display-popup`.
+`scripts/run-popup.sh <id>` reads the merged registry and executes the matching command inside `display-popup`.
 
 ## Files
 
-- `popups.tsv`: default popup registry and source of truth
-- `examples/popups.optional.tsv`: optional popup rows with extra dependencies
+- `popups.tsv`: default popup registry
+- `~/.config/tmux-popups/popups.local.tsv`: optional local overrides
+- `examples/popups.optional.tsv`: optional popup row examples
 - `tmux-popups.tmux`: TPM/manual entrypoint
+- `scripts/list-popups.sh`: merged registry and dependency listing
 - `scripts/generate-config.sh`: generates tmux bindings
 - `scripts/run-popup.sh`: dispatches popup ids to tool scripts
+- `scripts/doctor.sh`: diagnostics
+- `scripts/popup-help.sh`: help popup
 - `scripts/lib.sh`: shared shell helpers
 - `scripts/tools/*.sh`: popup tool implementations
 
