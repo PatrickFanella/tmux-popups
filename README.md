@@ -2,12 +2,14 @@
 
 Small tmux popup toolkit with a TSV registry, generated bindings, and shell tools.
 
+The default registry is intentionally dependency-light: tmux + shell, with graceful fallback if `less` is missing. Extra popups that need tools like `ocq`, `opencode`, `task`, `fzf`, `yazi`, or `lazygit` live in `examples/popups.optional.tsv` as copy/paste examples.
+
 ## Features
 
 - `Prefix+d` quick menu generated from `popups.tsv`
-- Direct bindings for common popups like chat, yazi, lazygit, notes, keys, and sessions
-- Popup tools for tasks, notes, docs/man pages, calendar, calculator, SSH hosts, clipboard, weather/news, timer, logs, watch, and markdown preview
-- No build step; POSIX-ish Bash scripts plus tmux
+- Direct bindings generated from the same registry
+- One source of truth: `popups.tsv`
+- No build step; Bash scripts plus tmux
 - Generated config stored at `${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf`
 
 ## Install with TPM
@@ -25,7 +27,7 @@ Reload tmux, then press TPM install key (`prefix + I`).
 Clone somewhere, then run the plugin script from your tmux config:
 
 ```sh
-git clone https://github.com/patrickfanella/tmux-popups.git ~/.config/tmux/plugins/tmux-popups
+git clone https://github.com/PatrickFanella/tmux-popups.git ~/.config/tmux/plugins/tmux-popups
 ```
 
 ```tmux
@@ -40,43 +42,22 @@ tmux source-file ~/.tmux.conf
 
 ## Default bindings
 
-Direct bindings:
+These defaults avoid non-core app dependencies.
 
 | Key | Popup |
 | --- | --- |
 | `Prefix+d` | Quick menu |
 | `Prefix+C-h` | Popup help |
-| `Prefix+C-g` | Quick chat (`ocq`) |
-| `Prefix+C-o` | `opencode` |
 | `Prefix+C-t` | Shell |
-| `Prefix+C-n` | Daily note |
-| `Prefix+C-y` | `lazygit` |
-| `Prefix+C-r` | `yazi` |
-| `Prefix+C-f` | `ferrosonic` |
-| `Prefix+C-j` | tmux sessions |
+| `Prefix+C-j` | tmux sessions (`tmux choose-tree`) |
 | `Prefix+C-b` | tmux key list |
-| `Prefix+C-z` | edit `~/.zshrc` |
 | `Prefix+C-S-r` | reload tmux config |
 
-The quick menu includes additional tools: tasks, docs, calendar, calculator, SSH, clipboard, weather/news, timer, logs, watch, markdown preview, config edit, home/projects/downloads, VS Code, and reload.
+The quick menu also includes the timer popup.
 
-## Optional tools
+## Add, create, or edit popups
 
-Popups degrade where possible, but these tools unlock more entries:
-
-- `ocq` for quick chat
-- `opencode`
-- `task` / Taskwarrior
-- `nvim` or `$EDITOR`
-- `tldr`, `man`
-- `khal`, `cal`
-- `fzf`
-- `cliphist`, `wl-copy`, `wl-paste`
-- `newsboat`, `curl`
-- `glow`, `bat`
-- `lazygit`, `yazi`, `ferrosonic`
-
-## Add or change a popup
+### 1. Understand the registry
 
 Edit `popups.tsv`:
 
@@ -84,17 +65,163 @@ Edit `popups.tsv`:
 id	direct_key	menu_key	title	width	height	command
 ```
 
-Use `-` for no direct key, no menu key, or no command. Commands are paths relative to the plugin root.
+Columns:
 
-Reload tmux after edits:
+| Column | Meaning |
+| --- | --- |
+| `id` | Unique popup id used by `scripts/run-popup.sh` |
+| `direct_key` | Direct tmux binding after prefix, or `-` for none |
+| `menu_key` | Key in `Prefix+d` quick menu, or `-` for none |
+| `title` | Popup title |
+| `width` | tmux popup width, e.g. `80%` |
+| `height` | tmux popup height, e.g. `80%` |
+| `command` | Plugin-relative script path, or `-` for an interactive shell |
+
+Use tabs between columns. Use `-` for blank/disabled fields.
+
+### 2. Add a shell-only popup
+
+Add this row to `popups.tsv`:
+
+```tsv
+scratch	C-s	s	scratch shell	80%	80%	-
+```
+
+Reload tmux:
 
 ```sh
 tmux source-file ~/.tmux.conf
 ```
 
+Now use:
+
+- `Prefix+C-s` for the direct popup
+- `Prefix+d`, then `s` from the quick menu
+
+### 3. Create a new popup script
+
+Create `scripts/tools/hello.sh`:
+
+```sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf 'Hello from tmux-popups.\n\nPress Enter to close... '
+read -r _ || true
+```
+
+Make it executable:
+
+```sh
+chmod +x scripts/tools/hello.sh
+```
+
+Add a row to `popups.tsv`:
+
+```tsv
+hello	-	h	hello	75%	75%	scripts/tools/hello.sh
+```
+
+Reload tmux:
+
+```sh
+tmux source-file ~/.tmux.conf
+```
+
+Open it with `Prefix+d`, then `h`.
+
+### 4. Edit an existing popup
+
+Change its row in `popups.tsv`, then reload tmux.
+
+Example: make the shell popup larger:
+
+```tsv
+shell	C-t	Enter	shell	90%	85%	-
+```
+
+Reload:
+
+```sh
+tmux source-file ~/.tmux.conf
+```
+
+### 5. Add optional dependency popups
+
+Optional popups are included as examples in:
+
+```text
+examples/popups.optional.tsv
+```
+
+Copy rows you want into `popups.tsv`, install the matching tool, then reload tmux.
+
+Example: quick chat needs [`ocq`](https://github.com/PatrickFanella/ocq):
+
+```tsv
+chat	C-g	g	quick chat	80%	80%	scripts/tools/chat.sh
+```
+
+Example: yazi file manager needs `yazi`:
+
+```tsv
+yazi	C-r	r	yazi	80%	80%	scripts/tools/yazi.sh
+```
+
+Reload after copying examples:
+
+```sh
+tmux source-file ~/.tmux.conf
+```
+
+### 6. Validate generated config
+
+Run:
+
+```sh
+scripts/generate-config.sh
+tmux source-file -n ~/.cache/tmux-popups/generated.conf
+```
+
+If tmux reports no errors, reload normally:
+
+```sh
+tmux source-file ~/.tmux.conf
+```
+
+## Optional tools
+
+Rows in `examples/popups.optional.tsv` can use:
+
+- [`ocq`](https://github.com/PatrickFanella/ocq) for quick OpenCode chat
+- `opencode`
+- `task` / Taskwarrior
+- `nvim`, `vim`, `vi`, or `$EDITOR`
+- `tldr`, `man`
+- `khal`, `cal`
+- `python3`
+- `fzf`
+- `cliphist`, `wl-copy`, `wl-paste`
+- `newsboat`, `curl`
+- `journalctl`, `tail`, `watch`
+- `glow`, `bat`
+- `lazygit`, `yazi`, `ferrosonic`
+
+## How it works
+
+```text
+popups.tsv
+  -> scripts/generate-config.sh
+  -> ~/.cache/tmux-popups/generated.conf
+  -> tmux source-file
+```
+
+`scripts/run-popup.sh <id>` reads `popups.tsv` and executes the matching command inside `display-popup`.
+
 ## Files
 
-- `popups.tsv`: source of truth for popup id, keys, title, size, command
+- `popups.tsv`: default popup registry and source of truth
+- `examples/popups.optional.tsv`: optional popup rows with extra dependencies
 - `tmux-popups.tmux`: TPM/manual entrypoint
 - `scripts/generate-config.sh`: generates tmux bindings
 - `scripts/run-popup.sh`: dispatches popup ids to tool scripts

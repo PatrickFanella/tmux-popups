@@ -6,14 +6,13 @@ registry="$root/popups.tsv"
 
 {
   cat <<'EOF'
-Tmux popups
+tmux-popups
 ===========
 
-Persistence
------------
-Popups open named tmux sessions via popup-session.sh.
-Reopening a popup reattaches to its existing popup-* session if still alive.
-If the tool exits, its popup session ends and next open starts fresh.
+Popups
+------
+Popups are generated from popups.tsv and run directly inside tmux display-popup.
+Edit popups.tsv, then reload tmux to regenerate bindings.
 
 Direct binds
 ------------
@@ -47,6 +46,7 @@ Files
 -----
 Plugin: ~/.config/tmux/plugins/tmux-popups
 Registry: popups.tsv
+Optional examples: examples/popups.optional.tsv
 Generated config: ~/.cache/tmux-popups/generated.conf
 EOF
-} | less -R
+} | if command -v less >/dev/null 2>&1; then less -R; else cat; fi
