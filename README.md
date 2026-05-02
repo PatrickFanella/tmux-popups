@@ -100,3 +100,7 @@ tmux source-file ~/.tmux.conf
 - `scripts/run-popup.sh`: dispatches popup ids to tool scripts
 - `scripts/lib.sh`: shared shell helpers
 - `scripts/tools/*.sh`: popup tool implementations
+
+## License
+
+MIT
