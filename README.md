@@ -104,6 +104,7 @@ set -g @tmux-popups-default-height '80%'
 set -g @tmux-popups-local-registry '~/.config/tmux-popups/popups.local.tsv'
 set -g @tmux-popups-enable-vscode 'on'
 set -g @tmux-popups-vscode-command 'code-insiders .'
+set -g @tmux-popups-yazi-mode 'popup'
 ```
 
 Use `-` in a row's width or height to inherit the default width/height options.
@@ -280,6 +281,13 @@ Yazi popups run in safe mode by default. tmux popups do not reliably support
 image-preview passthrough, so the launcher disables Yazi preview/preload plugins
 via a generated cache config. Set `TMUX_POPUPS_YAZI_SAFE=off` before launch to
 use your full Yazi config and accept the tmux risk.
+
+If Yazi reports a terminal response timeout inside `display-popup`, launch Yazi
+rows in a normal tmux window instead:
+
+```tmux
+set -g @tmux-popups-yazi-mode 'window'
+```
 
 ## How it works
 
