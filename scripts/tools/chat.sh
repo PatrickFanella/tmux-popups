@@ -3,6 +3,7 @@ set -u
 # shellcheck source=../lib.sh
 # shellcheck disable=SC2154
 . "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+reset=""; bold=""; dim=""; red=""; green=""; cyan=""; magenta=""
 setup_colors
 
 model="${OCQ_MODEL:-openai/gpt-5.4-mini}"
@@ -64,7 +65,7 @@ ocq_with_spinner() {
   json_file="$(mktemp)"
   err_file="$(mktemp)"
   trap 'rm -f "$json_file" "$err_file"' EXIT INT TERM
-  frames='|/-\'
+  frames=$'|/-\\'
   i=0
 
   ocq "${args[@]}" "$prompt" >"$json_file" 2>"$err_file" </dev/null &

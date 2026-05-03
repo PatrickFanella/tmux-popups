@@ -276,6 +276,11 @@ GitHub Actions runs:
 - `glow`, `bat`
 - `lazygit`, `yazi`, `ferrosonic`
 
+Yazi popups run in safe mode by default. tmux popups do not reliably support
+image-preview passthrough, so the launcher disables Yazi preview/preload plugins
+via a generated cache config. Set `TMUX_POPUPS_YAZI_SAFE=off` before launch to
+use your full Yazi config and accept the tmux risk.
+
 ## How it works
 
 ```text

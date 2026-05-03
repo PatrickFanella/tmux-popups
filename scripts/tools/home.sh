@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec yazi "$HOME"
+. "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+exec_yazi_popup "$HOME"

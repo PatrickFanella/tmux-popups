@@ -21,7 +21,7 @@ while true; do
   read -r action || exit 0
   case "$action" in
     a|add) printf 'Task: '; read -r text || continue; [[ -n "$text" ]] && task add "$text"; pause ;;
-    d|done) printf 'ID(s) done: '; read -ra ids || continue; ((${#ids[@]})) && task "${ids[@]}" done; pause ;;
+    d|done) printf 'ID(s) done: '; read -ra ids || continue; ((${#ids[@]})) && task "${ids[@]}" "done"; pause ;;
     m|mod|modify) printf 'ID: '; read -r id || continue; [[ -z "$id" ]] && continue; printf 'Modification: '; read -ra mod || continue; ((${#mod[@]})) && task "$id" modify "${mod[@]}"; pause ;;
     p|projects) task projects | less -R ;;
     e|edit) "${EDITOR:-nvim}" "$taskrc" ;;
