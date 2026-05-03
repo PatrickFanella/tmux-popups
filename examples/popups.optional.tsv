@@ -3,10 +3,10 @@
 # id	direct_key	menu_key	title	width	height	command
 # Native tmux session picker. Prefer tmux-sessionx if you use it.
 sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
-chat	C-g	g	quick chat	80%	80%	scripts/tools/chat.sh
-opencode	C-o	o	opencode	90%	85%	scripts/tools/opencode.sh
+chat	O	g	quick chat	80%	80%	scripts/tools/chat.sh
+opencode	-	o	opencode	90%	85%	scripts/tools/opencode.sh
 tasks	-	T	tasks	80%	80%	scripts/tools/tasks.sh
-notes	C-n	N	notes	80%	80%	scripts/tools/notes.sh
+notes	-	N	notes	80%	80%	scripts/tools/notes.sh
 docs	-	M	docs	80%	80%	scripts/tools/docs.sh
 calendar	-	A	calendar	80%	80%	scripts/tools/calendar.sh
 calc	-	=	calc	75%	75%	scripts/tools/calc.sh
@@ -16,10 +16,10 @@ info	-	I	info	80%	80%	scripts/tools/info.sh
 logs	-	L	logs	90%	85%	scripts/tools/logs.sh
 watch	-	W	watch	90%	85%	scripts/tools/watch.sh
 markdown	-	G	markdown	90%	85%	scripts/tools/markdown.sh
-lazygit	C-y	y	lazygit	80%	80%	scripts/tools/lazygit.sh
-yazi	C-r	r	yazi	80%	80%	scripts/tools/yazi.sh
-ferrosonic	C-f	-	ferrosonic	80%	80%	scripts/tools/ferrosonic.sh
-zshrc	C-z	z	~/.zshrc	80%	80%	scripts/tools/zshrc.sh
+lazygit	g	y	lazygit	80%	80%	scripts/tools/lazygit.sh
+yazi	Y	r	yazi	80%	80%	scripts/tools/yazi.sh
+ferrosonic	F	f	ferrosonic	80%	80%	scripts/tools/ferrosonic.sh
+zshrc	Z	z	dotfiles	80%	80%	scripts/tools/zshrc.sh
 tmux-local	-	t	tmux.local.conf	80%	80%	scripts/tools/tmux-local.sh
 home	-	h	home	80%	80%	scripts/tools/home.sh
 projects	-	p	projects	80%	80%	scripts/tools/projects.sh

@@ -4,7 +4,7 @@ Small tmux popup toolkit with a TSV registry, generated bindings, shared shell h
 
 ## Features
 
-- `Prefix+d` quick menu generated from registry rows
+- `Prefix+Enter` quick menu generated from registry rows
 - Direct bindings generated from the same rows
 - Default registry: `popups.tsv`
 - Local override registry: `~/.config/tmux-popups/popups.local.tsv`
@@ -65,18 +65,18 @@ The default registry includes the full popup set. Some rows need optional tools;
 
 | Key | Popup |
 | --- | --- |
-| `Prefix+d` | Quick menu |
+| `Prefix+Enter` | Quick menu |
 | `Prefix+C-h` | Popup help + dependency status |
-| `Prefix+C-g` | quick chat via [`ocq`](https://github.com/PatrickFanella/ocq) |
-| `Prefix+C-o` | opencode |
-| `Prefix+C-t` | shell |
-| `Prefix+C-n` | daily note |
-| `Prefix+C-y` | lazygit |
-| `Prefix+C-r` | yazi |
-| `Prefix+C-f` | ferrosonic |
+| `Prefix+O` | quick chat via [`ocq`](https://github.com/PatrickFanella/ocq) |
+| Menu `o` | opencode |
+| `Prefix+T` | shell |
+| Menu `N` | daily note |
+| `Prefix+g` | lazygit |
+| `Prefix+Y` | yazi |
+| `Prefix+F` | ferrosonic |
 | `Prefix+C-b` | tmux key list |
-| `Prefix+C-z` | edit `~/.zshrc` |
-| `Prefix+C-S-r` | reload tmux config |
+| `Prefix+Z` | dotfiles picker |
+| `Prefix+R` | reload tmux config |
 
 Session switching is intentionally left to [`tmux-sessionx`](https://github.com/omerxx/tmux-sessionx). Example:
 
@@ -95,8 +95,8 @@ Then `Prefix+j` opens sessionx. If you prefer tmux's built-in picker, copy the `
 Set these before the plugin loads:
 
 ```tmux
-set -g @tmux-popups-menu-key 'd'
-set -g @tmux-popups-reload-key 'C-S-r'
+set -g @tmux-popups-menu-key 'Enter'
+set -g @tmux-popups-reload-key 'R'
 set -g @tmux-popups-default-width '80%'
 set -g @tmux-popups-default-height '80%'
 set -g @tmux-popups-local-registry '~/.config/tmux-popups/popups.local.tsv'
@@ -186,7 +186,7 @@ Add a row to `popups.tsv` or your local registry:
 hello	-	h	hello	75%	75%	scripts/tools/hello.sh
 ```
 
-Reload tmux and open it with `Prefix+d`, then `h`.
+Reload tmux and open it with `Prefix+Enter`, then `h`.
 
 ## Optional examples
 
@@ -202,8 +202,8 @@ Examples:
 
 ```tsv
 sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh
-chat	C-g	g	quick chat	80%	80%	scripts/tools/chat.sh
-yazi	C-r	r	yazi	80%	80%	scripts/tools/yazi.sh
+chat	O	g	quick chat	80%	80%	scripts/tools/chat.sh
+yazi	Y	r	yazi	80%	80%	scripts/tools/yazi.sh
 ```
 
 `chat` needs [`ocq`](https://github.com/PatrickFanella/ocq).
