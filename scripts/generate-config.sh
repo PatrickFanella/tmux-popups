@@ -13,8 +13,8 @@ tmux_option() {
   printf '%s' "${value:-$fallback}"
 }
 
-menu_key="$(tmux_option @tmux-popups-menu-key d)"
-reload_key="$(tmux_option @tmux-popups-reload-key C-S-r)"
+menu_key="$(tmux_option @tmux-popups-menu-key Enter)"
+reload_key="$(tmux_option @tmux-popups-reload-key R)"
 default_width="$(tmux_option @tmux-popups-default-width 80%)"
 default_height="$(tmux_option @tmux-popups-default-height 80%)"
 vscode_command="$(tmux_option @tmux-popups-vscode-command 'code-insiders .')"

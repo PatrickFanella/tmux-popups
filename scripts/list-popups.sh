@@ -77,6 +77,9 @@ deps_status() {
 }
 
 merged_tsv() {
+  local registries=("$default_registry")
+  [[ -r "$local_registry" ]] && registries+=("$local_registry")
+
   awk -F '\t' '
     BEGIN { OFS = FS }
     /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
@@ -96,7 +99,7 @@ merged_tsv() {
         if (row[id] != "") print row[id]
       }
     }
-  ' "$default_registry" "$local_registry" 2>/dev/null
+  ' "${registries[@]}"
 }
 
 mode="${1:---pretty}"
