@@ -19,7 +19,7 @@ default_width="$(tmux_option @tmux-popups-default-width 80%)"
 default_height="$(tmux_option @tmux-popups-default-height 80%)"
 vscode_command="$(tmux_option @tmux-popups-vscode-command 'code-insiders .')"
 enable_vscode="$(tmux_option @tmux-popups-enable-vscode on)"
-yazi_mode="$(tmux_option @tmux-popups-yazi-mode popup)"
+yazi_mode="$(tmux_option @tmux-popups-yazi-mode window)"
 local_registry="$(tmux_option @tmux-popups-local-registry "${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv")"
 case "$local_registry" in
   '~'/*) local_registry="$HOME/${local_registry#~/}" ;;
@@ -50,6 +50,10 @@ popup_action() {
     printf 'new-window -c "#{pane_current_path}" -n "%s" "%s"' \
       "$(q "$title")" "$(q "$cmd")"
     return
+  fi
+
+  if [[ "$yazi_mode" == "popup" ]] && is_yazi_command "$command"; then
+    printf 'display-message "tmux-popups: warning: yazi popup mode may trigger terminal response timeout" \\; '
   fi
 
   printf 'display-popup -T " %s " -d "#{pane_current_path}" -w %s -h %s -E "%s"' \

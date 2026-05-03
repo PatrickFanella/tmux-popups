@@ -104,7 +104,7 @@ set -g @tmux-popups-default-height '80%'
 set -g @tmux-popups-local-registry '~/.config/tmux-popups/popups.local.tsv'
 set -g @tmux-popups-enable-vscode 'on'
 set -g @tmux-popups-vscode-command 'code-insiders .'
-set -g @tmux-popups-yazi-mode 'popup'
+set -g @tmux-popups-yazi-mode 'window'
 ```
 
 Use `-` in a row's width or height to inherit the default width/height options.
@@ -277,17 +277,22 @@ GitHub Actions runs:
 - `glow`, `bat`
 - `lazygit`, `yazi`, `ferrosonic`
 
-Yazi popups run in safe mode by default. tmux popups do not reliably support
+Yazi rows open in a normal tmux window by default. Yazi can report a terminal
+response timeout inside `display-popup`, so window mode is the safer default.
+
+Yazi still runs in safe mode by default. tmux popups do not reliably support
 image-preview passthrough, so the launcher disables Yazi preview/preload plugins
 via a generated cache config. Set `TMUX_POPUPS_YAZI_SAFE=off` before launch to
 use your full Yazi config and accept the tmux risk.
 
-If Yazi reports a terminal response timeout inside `display-popup`, launch Yazi
-rows in a normal tmux window instead:
+To force popup mode:
 
 ```tmux
-set -g @tmux-popups-yazi-mode 'window'
+set -g @tmux-popups-yazi-mode 'popup'
 ```
+
+Warning: popup mode may trigger Yazi terminal response timeouts; tmux-popups
+shows a warning before launching Yazi in popup mode.
 
 ## How it works
 
