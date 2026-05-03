@@ -78,7 +78,7 @@ deps_status() {
 
 merged_tsv() {
   local registries=("$default_registry")
-  [[ -f "$local_registry" ]] && registries+=("$local_registry")
+  [[ -r "$local_registry" ]] && registries+=("$local_registry")
 
   awk -F '\t' '
     BEGIN { OFS = FS }

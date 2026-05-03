@@ -17,6 +17,12 @@ for file in "${files[@]}"; do
   [[ -e "$file" ]] && existing+=("$file")
 done
 
+if [[ ${#existing[@]} -eq 0 ]]; then
+  printf 'No dotfiles found.\n'
+  pause
+  exit 0
+fi
+
 if command -v fzf >/dev/null 2>&1; then
   selected="$(printf '%s\n' "${existing[@]}" | fzf --prompt='dotfiles> ' --height=100% --border --reverse)"
 else

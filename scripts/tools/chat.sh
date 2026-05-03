@@ -63,6 +63,7 @@ ocq_with_spinner() {
   local prompt="$1" json_file err_file pid status frame frames i
   json_file="$(mktemp)"
   err_file="$(mktemp)"
+  trap 'rm -f "$json_file" "$err_file"' EXIT INT TERM
   frames='|/-\'
   i=0
 
@@ -118,7 +119,7 @@ while true; do
   printf '%s\n\n' "$resp"
   rule
 
-  printf '%sEnter%s continue  %sc%s copy  %scq%s copy+quit  %sq%s/%s/exit%s quit %s›%s ' "$dim" "$reset" "$cyan" "$reset" "$cyan" "$reset" "$cyan" "$reset" "$cyan" "$reset" "$dim" "$reset"
+  printf '%sEnter%s continue  %sc%s copy  %scq%s copy+quit  %sq%s/%sexit%s quit %s›%s ' "$dim" "$reset" "$cyan" "$reset" "$cyan" "$reset" "$cyan" "$reset" "$cyan" "$reset" "$dim" "$reset"
   IFS= read -r key || break
   debug_input action "$key"
   key="$(normalize_input "$key")"

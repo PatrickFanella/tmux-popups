@@ -37,7 +37,6 @@ popup_action() {
   [[ "$width" == "-" ]] && width="$default_width"
   [[ "$height" == "-" ]] && height="$default_height"
   local cmd="$root/scripts/run-popup.sh $id"
-  [[ "$id" == "opencode" ]] && cmd="opencode"
   printf 'display-popup -T " %s " -d "#{pane_current_path}" -w %s -h %s -E "%s"' \
     "$(q "$title")" "$width" "$height" "$(q "$cmd")"
 }
