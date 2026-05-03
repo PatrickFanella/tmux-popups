@@ -2,6 +2,8 @@
 
 Small tmux popup toolkit with a TSV registry, generated bindings, shared shell helpers, dependency checks, and optional local overrides.
 
+![tmux-popups demo](assets/demo.gif)
+
 ## Features
 
 - `Prefix+Enter` quick menu generated from registry rows
