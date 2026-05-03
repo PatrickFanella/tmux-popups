@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-python3 <<'PY'
+python3 -c '
 import math, statistics, random, datetime, decimal, fractions
 ns = {"math": math, "statistics": statistics, "random": random, "datetime": datetime, "decimal": decimal, "fractions": fractions}
 ns.update({name: getattr(math, name) for name in dir(math) if not name.startswith("_")})
@@ -12,4 +12,4 @@ while True:
     if not expr or expr in {"/exit", "/quit", "q", "quit", "exit"}: break
     try: print(eval(expr, {"__builtins__": {}}, ns))
     except Exception as exc: print(f"error: {exc}")
-PY
+'

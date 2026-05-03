@@ -44,11 +44,11 @@ open_editor() {
 
 copy_text() {
   if command -v wl-copy >/dev/null 2>&1; then
-    wl-copy
+    wl-copy >/dev/null 2>&1
   elif command -v wlcopy >/dev/null 2>&1; then
-    wlcopy
+    wlcopy >/dev/null 2>&1
   elif command -v xclip >/dev/null 2>&1; then
-    xclip -selection clipboard
+    xclip -selection clipboard >/dev/null 2>&1
   else
     printf 'No clipboard tool found: install wl-copy, wlcopy, or xclip.\n' >&2
     return 1
