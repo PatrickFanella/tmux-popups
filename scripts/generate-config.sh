@@ -33,9 +33,9 @@ q() {
   printf '%s' "$s"
 }
 
-is_yazi_command() {
+is_yazi_id() {
   case "$1" in
-    scripts/tools/yazi.sh|scripts/tools/home.sh|scripts/tools/projects.sh|scripts/tools/downloads.sh) return 0 ;;
+    yazi|home|projects|downloads) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -46,13 +46,13 @@ popup_action() {
   [[ "$height" == "-" ]] && height="$default_height"
   local cmd="$root/scripts/run-popup.sh $id"
 
-  if [[ "$yazi_mode" == "window" ]] && is_yazi_command "$command"; then
+  if [[ "$yazi_mode" == "window" ]] && is_yazi_id "$id"; then
     printf 'new-window -c "#{pane_current_path}" -n "%s" "%s"' \
       "$(q "$title")" "$(q "$cmd")"
     return
   fi
 
-  if [[ "$yazi_mode" == "popup" ]] && is_yazi_command "$command"; then
+  if [[ "$yazi_mode" == "popup" ]] && is_yazi_id "$id"; then
     printf 'display-message "tmux-popups: warning: yazi popup mode may trigger terminal response timeout" \\; '
   fi
 
