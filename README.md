@@ -99,12 +99,19 @@ Set these before the plugin loads:
 ```tmux
 set -g @tmux-popups-menu-key 'Enter'
 set -g @tmux-popups-reload-key 'R'
+set -g @tmux-popups-config-file '~/.tmux.conf'
 set -g @tmux-popups-default-width '80%'
 set -g @tmux-popups-default-height '80%'
 set -g @tmux-popups-local-registry '~/.config/tmux-popups/popups.local.tsv'
 set -g @tmux-popups-enable-vscode 'on'
-set -g @tmux-popups-vscode-command 'code-insiders .'
+set -g @tmux-popups-vscode-command 'code .'
 set -g @tmux-popups-yazi-mode 'window'
+```
+
+`@tmux-popups-config-file` is the tmux config file reloaded by the `R` reload binding and the Quick Menu "reload tmux" entry. Defaults to `~/.tmux.conf`. Set this if your config lives elsewhere, for example:
+
+```tmux
+set -g @tmux-popups-config-file '~/.config/tmux/tmux.conf'
 ```
 
 Use `-` in a row's width or height to inherit the default width/height options.
@@ -276,6 +283,16 @@ GitHub Actions runs:
 - `journalctl`, `tail`, `watch`
 - `glow`, `bat`
 - `lazygit`, `yazi`, `ferrosonic`
+
+## Environment variables
+
+Some tool scripts respect environment variables:
+
+| Variable | Script | Default |
+| --- | --- | --- |
+| `NOTES_DIR` | `notes` popup | `~/Notes/daily` |
+| `PROJECTS_DIR` | `projects` popup | `~/Projects` |
+| `TMUX_POPUPS_YAZI_SAFE` | yazi launcher | `on` |
 
 Yazi rows open in a normal tmux window by default. Yazi can report a terminal
 response timeout inside `display-popup`, so window mode is the safer default.
