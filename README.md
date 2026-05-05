@@ -108,7 +108,7 @@ set -g @tmux-popups-vscode-command 'code .'
 set -g @tmux-popups-yazi-mode 'window'
 ```
 
-`@tmux-popups-config-file` is the tmux config file reloaded by the `R` reload binding and the Quick Menu "reload tmux" entry. Defaults to `~/.tmux.conf`. Set this if your config lives elsewhere, for example:
+`@tmux-popups-config-file` is the tmux config file reloaded by the reload binding (`@tmux-popups-reload-key`, default `R`) and the Quick Menu "reload tmux" entry. Defaults to `~/.tmux.conf`. Set this if your config lives elsewhere, for example:
 
 ```tmux
 set -g @tmux-popups-config-file '~/.config/tmux/tmux.conf'
