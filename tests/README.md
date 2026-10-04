@@ -21,5 +21,7 @@ terminal checks do not complete the real-terminal, multiple-client and optional
 integration qualification in issue #24, or authorize a release under #25.
 
 Known defect regressions are added with their focused repairs. The October 4
-baseline reproduction of issue #4 fails because a literal `~/config/tmux.conf`
-reload path expands to `$HOME/~/config/tmux.conf`.
+baseline reproduction of issue #4 failed because a literal `~/config/tmux.conf`
+reload path expanded to `$HOME/~/config/tmux.conf`. Three additional tests now
+cover reload and registry paths plus literal project arguments, including bare
+home, spaces, absolute/relative paths and unevaluated shell expressions.

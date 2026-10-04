@@ -2,6 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. "$root/scripts/lib.sh"
 registry="$root/popups.tsv"
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups"
 out="$cache_dir/generated.conf"
@@ -21,14 +22,10 @@ vscode_command="$(tmux_option @tmux-popups-vscode-command 'code .')"
 enable_vscode="$(tmux_option @tmux-popups-enable-vscode on)"
 yazi_mode="$(tmux_option @tmux-popups-yazi-mode window)"
 local_registry="$(tmux_option @tmux-popups-local-registry "${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv")"
-case "$local_registry" in
-  '~'/*) local_registry="$HOME/${local_registry#~/}" ;;
-esac
+local_registry="$(expand_home_path "$local_registry")"
 export TMUX_POPUPS_LOCAL_REGISTRY="$local_registry"
 config_file="$(tmux_option @tmux-popups-config-file "$HOME/.tmux.conf")"
-case "$config_file" in
-  '~'/*) config_file="$HOME/${config_file#~/}" ;;
-esac
+config_file="$(expand_home_path "$config_file")"
 
 q() {
   local s="$1"

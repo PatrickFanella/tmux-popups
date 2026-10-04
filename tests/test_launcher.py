@@ -207,6 +207,38 @@ class LauncherTests(unittest.TestCase):
         result = self.run_script("scripts/run-popup.sh", "yazi", check=False)
         self.assertEqual(result.returncode, 23)
 
+    def test_home_relative_reload_path_expands_once(self):
+        self.tmux("set-option", "-g", "@tmux-popups-config-file", "~/config/tmux.conf")
+        self.run_script("scripts/generate-config.sh")
+        self.assertIn(f'"{self.home}/config/tmux.conf"', self.generated().read_text())
+        self.assertNotIn(f"{self.home}/~/", self.generated().read_text())
+
+    def test_home_relative_registry_selection(self):
+        registry = self.home / "config/local entries.tsv"
+        registry.parent.mkdir()
+        registry.write_text("fixture\t-\tx\tfixture\t70%\t70%\t-\n")
+        self.tmux("set-option", "-g", "@tmux-popups-local-registry", "~/config/local entries.tsv")
+        self.run_script("scripts/generate-config.sh")
+        self.assertIn("run-popup.sh fixture", self.generated().read_text())
+        env = dict(self.env, TMUX_POPUPS_LOCAL_REGISTRY="~/config/local entries.tsv")
+        self.assertIn("fixture\t", self.run_script("scripts/list-popups.sh", "--tsv", env=env).stdout)
+
+    def test_project_path_expansion_is_literal(self):
+        marker = self.home / "project-argument"
+        self.stub("yazi", f"printf '%s' \"$1\" > {shlex.quote(str(marker))}")
+        for value, expected in [
+            ("~/Work with spaces", str(self.home / "Work with spaces")),
+            ("~", str(self.home)),
+            ("/tmp/absolute path", "/tmp/absolute path"),
+            ("relative path", "relative path"),
+            ("$(touch unexpected)", "$(touch unexpected)"),
+            ("$OTHER_HOME/path", "$OTHER_HOME/path"),
+        ]:
+            with self.subTest(value=value):
+                self.run_script("scripts/tools/projects.sh", env=dict(self.env, PROJECTS_DIR=value))
+                self.assertEqual(marker.read_text(), expected)
+        self.assertFalse((self.home / "unexpected").exists())
+
 
 if __name__ == "__main__":
     def terminate(signum, frame):

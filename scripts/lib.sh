@@ -2,6 +2,16 @@
 
 TMUX_POPUPS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+expand_home_path() {
+  # Match literal user input; shell expansion here would corrupt the pattern.
+  # shellcheck disable=SC2088
+  case "$1" in
+    '~') printf '%s' "$HOME" ;;
+    '~/'*) printf '%s/%s' "$HOME" "${1:2}" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
 has_tty() { [[ -t 1 && "${NO_COLOR:-}" == "" ]]; }
 
 setup_colors() {

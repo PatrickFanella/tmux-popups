@@ -114,6 +114,11 @@ set -g @tmux-popups-yazi-mode 'window'
 set -g @tmux-popups-config-file '~/.config/tmux/tmux.conf'
 ```
 
+Config paths, local registry paths and `PROJECTS_DIR` accept a literal `~/`
+prefix or bare `~`. They expand to the home directory once. Absolute and
+ordinary relative paths stay as supplied; variable expressions and command
+substitutions in these settings are treated as text.
+
 Use `-` in a row's width or height to inherit the default width/height options.
 
 ## Registry format

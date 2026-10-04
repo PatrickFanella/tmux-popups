@@ -2,7 +2,9 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. "$root/scripts/lib.sh"
 local_registry="${TMUX_POPUPS_LOCAL_REGISTRY:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv}"
+local_registry="$(expand_home_path "$local_registry")"
 
 tmux_opt() {
   tmux show-option -gqv "$1" 2>/dev/null || true
@@ -10,7 +12,7 @@ tmux_opt() {
 menu_key="$(tmux_opt @tmux-popups-menu-key)"; menu_key="${menu_key:-Enter}"
 reload_key="$(tmux_opt @tmux-popups-reload-key)"; reload_key="${reload_key:-R}"
 config_file="$(tmux_opt @tmux-popups-config-file)"; config_file="${config_file:-$HOME/.tmux.conf}"
-case "$config_file" in '~'/*) config_file="$HOME/${config_file#~/}" ;; esac
+config_file="$(expand_home_path "$config_file")"
 
 status_mark() {
   case "$1" in
