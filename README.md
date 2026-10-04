@@ -340,3 +340,9 @@ popups.tsv + optional local registry
 ## License
 
 MIT
+
+## Verification
+
+Run `scripts/check.sh` for syntax, ShellCheck and isolated launcher regressions.
+See [the verification guide](tests/README.md) for required tools, fixture isolation
+and the separate real-terminal release gates.

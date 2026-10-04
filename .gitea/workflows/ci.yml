@@ -1,4 +1,4 @@
-name: CI
+name: Launcher verification
 
 on:
   push:
@@ -7,9 +7,11 @@ on:
 jobs:
   shell:
     runs-on: ubuntu-latest
+    container: node:24-bookworm-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Install verification tools
-        run: sudo apt-get update && sudo apt-get install -y python3 shellcheck tmux
+        run: apt-get update && apt-get install -y --no-install-recommends python3 shellcheck tmux
       - name: Syntax, ShellCheck and isolated launcher regressions
         run: scripts/check.sh
