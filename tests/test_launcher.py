@@ -241,6 +241,49 @@ class LauncherTests(unittest.TestCase):
                 self.assertEqual(marker.read_text(), expected)
         self.assertFalse((self.home / "unexpected").exists())
 
+    def test_registry_option_survives_fresh_dispatch(self):
+        registry = self.home / "custom.tsv"
+        registry.write_text(
+            "fixture\t-\tx\tfixture\t70%\t70%\tscripts/tools/calc.sh\n"
+            "yazi\tY\tr\tcustom yazi\t80%\t80%\tscripts/tools/calc.sh\n"
+        )
+        marker = self.home / "dispatched"
+        self.stub("python3", f"printf selected > {shlex.quote(str(marker))}")
+        self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(registry))
+        self.load()
+        for entry in ["fixture", "yazi"]:
+            with self.subTest(entry=entry):
+                self.run_script("scripts/run-popup.sh", entry)
+                self.assertEqual(marker.read_text(), "selected")
+                marker.unlink()
+        self.stub("less", "exec cat")
+        self.assertIn(str(registry), self.run_script("scripts/popup-help.sh").stdout)
+        self.assertIn("fixture\t", self.run_script("scripts/list-popups.sh", "--tsv").stdout)
+
+    def test_explicit_registry_environment_precedes_tmux_option(self):
+        option = self.home / "option.tsv"
+        explicit = self.home / "explicit.tsv"
+        option.write_text("fixture\t-\tx\toption\t70%\t70%\t-\n")
+        explicit.write_text("fixture\t-\tx\texplicit\t70%\t70%\t-\n")
+        self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(option))
+        env = dict(self.env, TMUX_POPUPS_LOCAL_REGISTRY=str(explicit))
+        self.run_script("scripts/generate-config.sh", env=env)
+        self.assertIn("# Local source: " + str(explicit), self.generated().read_text())
+        self.assertIn("\texplicit\t", self.run_script("scripts/list-popups.sh", "--tsv", env=env).stdout)
+
+    def test_missing_explicit_registry_fails_without_silent_fallback(self):
+        missing = self.home / "missing.tsv"
+        self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(missing))
+        for script, args in [
+            ("scripts/generate-config.sh", []),
+            ("scripts/list-popups.sh", ["--tsv"]),
+            ("scripts/run-popup.sh", ["yazi"]),
+        ]:
+            with self.subTest(script=script):
+                result = self.run_script(script, *args, input="\n", check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(str(missing), result.stderr)
+
 
 if __name__ == "__main__":
     def terminate(signum, frame):

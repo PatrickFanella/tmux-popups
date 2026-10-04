@@ -25,3 +25,7 @@ baseline reproduction of issue #4 failed because a literal `~/config/tmux.conf`
 reload path expanded to `$HOME/~/config/tmux.conf`. Three additional tests now
 cover reload and registry paths plus literal project arguments, including bare
 home, spaces, absolute/relative paths and unevaluated shell expressions.
+
+Registry-selection regressions also cover fresh dispatch after generation,
+command overrides, environment precedence, help output and explicit missing-file
+failures. These cases failed before the shared selection helper was added.

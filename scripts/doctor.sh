@@ -2,9 +2,10 @@
 set -u
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. "$root/scripts/lib.sh"
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups"
 generated="$cache_dir/generated.conf"
-local_registry="${TMUX_POPUPS_LOCAL_REGISTRY:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv}"
+local_registry="$(resolve_local_registry)" || exit 1
 failures=0
 warnings=0
 

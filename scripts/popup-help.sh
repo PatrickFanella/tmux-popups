@@ -3,8 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$root/scripts/lib.sh"
-local_registry="${TMUX_POPUPS_LOCAL_REGISTRY:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv}"
-local_registry="$(expand_home_path "$local_registry")"
+local_registry="$(resolve_local_registry)"
 
 tmux_opt() {
   tmux show-option -gqv "$1" 2>/dev/null || true

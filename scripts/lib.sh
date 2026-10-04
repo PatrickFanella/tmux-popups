@@ -12,6 +12,26 @@ expand_home_path() {
   esac
 }
 
+resolve_local_registry() {
+  local selected explicit=off
+  if [[ -n "${TMUX_POPUPS_LOCAL_REGISTRY:-}" ]]; then
+    selected="$TMUX_POPUPS_LOCAL_REGISTRY"
+    explicit=on
+  else
+    selected="$(tmux show-option -gqv @tmux-popups-local-registry 2>/dev/null || true)"
+    if [[ -n "$selected" ]]; then
+      explicit=on
+    else
+      selected="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv"
+    fi
+  fi
+  selected="$(expand_home_path "$selected")"
+  if [[ "$explicit" == "on" ]] && [[ ! -f "$selected" || ! -r "$selected" ]]; then
+    die "configured local registry is not a readable file: $selected"
+  fi
+  printf '%s' "$selected"
+}
+
 has_tty() { [[ -t 1 && "${NO_COLOR:-}" == "" ]]; }
 
 setup_colors() {

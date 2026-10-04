@@ -4,9 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$root/scripts/lib.sh"
 default_registry="$root/popups.tsv"
-local_registry_default="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/popups.local.tsv"
-local_registry="${TMUX_POPUPS_LOCAL_REGISTRY:-$local_registry_default}"
-local_registry="$(expand_home_path "$local_registry")"
+local_registry="$(resolve_local_registry)"
 
 usage() {
   cat <<'EOF'

@@ -3,13 +3,13 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 id="${1:?popup id required}"
+rows="$("$root/scripts/list-popups.sh" --tsv)"
 
 row="$(
-  "$root/scripts/list-popups.sh" --tsv |
-    awk -F '\t' -v wanted="$id" '
-      $1 == wanted { print; found = 1; exit }
+  awk -F '\t' -v wanted="$id" '
+      $1 == wanted { print; found = 1 }
       END { exit found ? 0 : 1 }
-    '
+    ' <<<"$rows"
 )" || row=""
 
 if [[ -n "$row" ]]; then

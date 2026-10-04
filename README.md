@@ -119,6 +119,13 @@ prefix or bare `~`. They expand to the home directory once. Absolute and
 ordinary relative paths stay as supplied; variable expressions and command
 substitutions in these settings are treated as text.
 
+Generation, dispatch, help and doctor select the same local registry. A nonempty
+`TMUX_POPUPS_LOCAL_REGISTRY` environment value takes precedence over
+`@tmux-popups-local-registry`, followed by the optional XDG config default.
+An explicitly selected registry must be a readable file; a missing optional
+default is allowed. Set the environment value when running a CLI helper against
+a particular registry.
+
 Use `-` in a row's width or height to inherit the default width/height options.
 
 ## Registry format
