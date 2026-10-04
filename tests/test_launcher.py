@@ -53,9 +53,10 @@ class LauncherTests(unittest.TestCase):
             TERM="xterm-256color",
         )
         self.stub("tmux", f"exec {shlex.quote(REAL_TMUX)} -S {shlex.quote(str(self.socket))} \"$@\"")
-        self.tmux("-f", "/dev/null", "new-session", "-d", "-s", "fixture", "-x", "100", "-y", "30", "/bin/bash --noprofile --norc")
+        self.tmux("-f", "/dev/null", "new-session", "-d", "-s", "fixture", "-x", "100", "-y", "30", "printf 'fixture-ready\\n'; exec /bin/bash --noprofile --norc")
         self.owned_cleanup(lambda: self.tmux("kill-server", check=False))
         self.tmux("set-option", "-g", "@tmux-popups-enable-vscode", "off")
+        self.tmux("set-option", "-g", "assume-paste-time", "0")
 
     def stub(self, name, body):
         path = self.bin / name
@@ -121,6 +122,7 @@ class LauncherTests(unittest.TestCase):
 
         self.owned_cleanup(cleanup)
         self.wait_until(lambda: bool(self.tmux("list-clients", "-F", "#{client_name}").stdout.strip()))
+        self.wait_until(lambda: b"fixture-ready" in self.terminal_output)
         return master
 
     def wait_until(self, predicate):
