@@ -67,6 +67,78 @@ class ContextTests(unittest.TestCase):
                         self.assertEqual(self.tmux("display-message", "-p", "-t", origins[other]["PANE"], "#{session_name}").stdout.strip(), other)
         self.assertFalse((Path(origins["fixture"]["DIRECTORY"]) / "injected").exists())
 
+    def test_control_byte_directories_are_literal_in_every_dispatch_mode(self):
+        first, second, origins = self.clients()
+        # The executable can only write a harmless marker in this temporary home.
+        unexpected = self.home / "unexpected-command"
+        self.stub("review_payload", "printf executed > " + shlex.quote(str(unexpected)))
+        code = "import os,json,pathlib; pathlib.Path(" + repr(str(self.home)) + ",os.environ['TMUX_POPUPS_SESSION']).write_text(json.dumps({k:os.environ.get('TMUX_POPUPS_'+k) for k in ['CLIENT','SESSION','WINDOW','PANE','DIRECTORY']}|{'cwd':os.getcwd()}))"
+        self.stub("yazi", "exec python3 -c " + shlex.quote(code))
+        for name in ("literal\nreview_payload\n", "tabs\tinside\t",
+                     "mixed ' \\; $(review_payload) `review_payload` #{session_name} #()\r\t\n\n"):
+            directory = self.home / name
+            directory.mkdir()
+            for session in ("fixture", "other"):
+                self.tmux("respawn-pane", "-k", "-t", origins[session]["PANE"],
+                          "-c", str(directory).replace("#", "##"),
+                          "printf 'fixture-ready\\n'; exec /bin/bash --noprofile --norc")
+                # Remove only tmux's output terminator, never path whitespace.
+                actual = subprocess.run([launcher.REAL_TMUX, "-S", str(self.socket),
+                                         "display-message", "-p", "-t", origins[session]["PANE"],
+                                         "#{pane_current_path}"], env=self.env, capture_output=True,
+                                        check=True, timeout=12).stdout.decode()
+                self.assertEqual(actual, str(directory) + "\n")
+                origins[session]["DIRECTORY"] = str(directory)
+            for mode in ("window", "popup"):
+                self.tmux("set-option", "-g", "@tmux-popups-yazi-mode", mode)
+                self.load()
+                for source in ("direct", "menu"):
+                    for session, fd in (("fixture", first), ("other", second)):
+                        with self.subTest(directory=name, mode=mode, source=source, session=session):
+                            other = "other" if session == "fixture" else "fixture"
+                            self.tmux("select-pane", "-t", origins[other]["PANE"])
+                            marker = self.home / origins[session]["SESSION"]
+                            unexpected.unlink(missing_ok=True)
+                            if source == "direct":
+                                os.write(fd, b"\x02Y")
+                            else:
+                                self.client_output[fd].clear()
+                                os.write(fd, b"\x02\r")
+                                self.wait_until(lambda: b"Quick Menu" in self.client_output[fd])
+                                os.write(fd, b"r")
+                            self.wait_until(lambda: marker.exists() or unexpected.exists())
+                            self.assertFalse(unexpected.exists(), "directory text executed as a command")
+                            self.assertTrue(marker.exists(), "intended adapter did not run")
+                            self.assertEqual(json.loads(marker.read_text()), origins[session] | {"cwd": str(directory)})
+                            marker.unlink()
+                            print("literal context:", mode, source, session, repr(name), flush=True)
+                            self.assertEqual(self.tmux("display-message", "-p", "-t", origins[other]["PANE"],
+                                                       "#{session_name}").stdout.strip(), other)
+
+    def test_vscode_menu_preserves_control_bytes_without_execution(self):
+        first, second, origins = self.clients()
+        unexpected = self.home / "unexpected-command"
+        marker = self.home / "vscode-directory"
+        self.stub("review_payload", "printf executed > " + shlex.quote(str(unexpected)))
+        code = "import os,pathlib; pathlib.Path(" + repr(str(marker)) + ").write_bytes(os.fsencode(os.getcwd()))"
+        self.tmux("set-option", "-g", "@tmux-popups-enable-vscode", "on")
+        self.tmux("set-option", "-g", "@tmux-popups-vscode-command", "python3 -c " + shlex.quote(code))
+        directory = self.home / "literal\nreview_payload\n' \\; $(review_payload) #{session_name}\t\n\n"
+        directory.mkdir()
+        for session, fd in (("fixture", first), ("other", second)):
+            self.tmux("respawn-pane", "-k", "-t", origins[session]["PANE"],
+                      "-c", str(directory).replace("#", "##"),
+                      "printf 'fixture-ready\\n'; exec /bin/bash --noprofile --norc")
+            self.load()
+            self.client_output[fd].clear()
+            os.write(fd, b"\x02\r")
+            self.wait_until(lambda: b"Quick Menu" in self.client_output[fd])
+            os.write(fd, b"v")
+            self.wait_until(lambda: marker.exists() or unexpected.exists())
+            self.assertFalse(unexpected.exists())
+            self.assertEqual(marker.read_bytes(), os.fsencode(str(directory)))
+            marker.unlink()
+
     def helper(self, expression, context):
         return subprocess.run(["bash", "-c", '. "$1"; ' + expression, "bash", str(launcher.ROOT / "scripts/lib.sh")],
                               env=self.env | {"TMUX_POPUPS_" + k: v for k, v in context.items()},
