@@ -257,3 +257,58 @@ availability_policy() {
     *) die "invalid availability policy: $value" ;;
   esac
 }
+
+# User data stays outside the plugin and generated cache. Resolve only literal ~.
+resolve_user_script_directory() {
+  local selected
+  selected="${TMUX_POPUPS_USER_SCRIPT_DIRECTORY:-}"
+  [[ -n "$selected" ]] || selected="$(tmux show-option -gqv @tmux-popups-user-script-directory 2>/dev/null || true)"
+  selected="${selected:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/scripts}"
+  selected="$(expand_home_path "$selected")"
+  [[ "$selected" == /* ]] || die "user script directory must be absolute: $selected"
+  printf '%s' "$selected"
+}
+
+# Sets execution_argv without evaluating any supplied executable or argument.
+resolve_execution() {
+  local command="$1" kind="$2" arguments="$3" location="$4" target serialized encoded decoded
+  execution_argv=()
+  case "$kind" in
+    plugin)
+      if [[ "$command" == - ]]; then
+        [[ "$arguments" == - ]] || die "$location: interactive shell does not accept arguments"
+        return
+      fi
+      # shellcheck disable=SC2088 # Match literal registry data.
+      [[ "$command" != /* && "$command" != '~' && "$command" != '~/'* ]] || die "$location: plugin target must be relative"
+      target="$TMUX_POPUPS_DIR/$command" ;;
+    absolute)
+      target="$(expand_home_path "$command")"
+      [[ "$target" == /* ]] || die "$location: absolute target must be absolute" ;;
+    user)
+      # shellcheck disable=SC2088 # Match literal registry data.
+      [[ "$command" != - && "$command" != /* && "$command" != '~' && "$command" != '~/'* ]] || die "$location: user target must be relative"
+      target="$(resolve_user_script_directory)/$command" ;;
+    shell)
+      # shellcheck disable=SC2088 # Match literal registry data.
+      [[ "$command" != - && "$arguments" == - ]] || die "$location: shell expression requires a command and arguments '-'"
+      target="$(shell_command)" || die "$location: no usable shell: ${SHELL:-bash}"
+      execution_argv=("$target" -c "$command")
+      return ;;
+    *) die "$location: invalid execution kind: $kind" ;;
+  esac
+  [[ -f "$target" && -x "$target" ]] || die "$location: executable target not found or not executable: $target"
+  execution_argv=("$target")
+  [[ "$arguments" != - ]] || return 0
+  command -v python3 >/dev/null 2>&1 || die "$location: python3 required for JSON arguments"
+  if ! serialized="$(python3 "$TMUX_POPUPS_DIR/scripts/parse-arguments.py" "$arguments")"; then
+    die "$location: invalid arguments: expected a JSON array of strings without NUL or surrogate code points"
+  fi
+  # The parser emits only a marker and hexadecimal byte escapes. printf decodes
+  # those bytes directly; no shell, variable or command expansion takes place.
+  [[ -n "$serialized" ]] || return 0
+  while IFS= read -r encoded; do
+    printf -v decoded '%b' "${encoded:1}"
+    execution_argv+=("$decoded")
+  done <<<"$serialized"
+}

@@ -167,19 +167,24 @@ id	direct_key	menu_key	title	width	height	command	mode	completion	enabled	deps
 | `title` | Popup title |
 | `width` | tmux popup width, e.g. `80%`, or `-` for default |
 | `height` | tmux popup height, e.g. `80%`, or `-` for default |
-| `command` | Plugin-relative executable path, or `-` for an interactive shell |
+| `command` | Executable path interpreted by `kind`, or `-` for the legacy interactive shell |
 | `mode` | Optional `popup`, `window`, `command`, or `-` for compatibility defaults |
 | `completion` | Optional `foreground`, `background`, or `-` for foreground |
 | `enabled` | Optional `on` or `off`; old rows default to `on` |
 | `deps` | Optional `auto`, `-`, or space-separated command groups with `|` alternatives |
+| `kind` | Optional `plugin`, `absolute`, `user`, `shell`, or `-` for `plugin` |
+| `arguments` | Optional JSON array of strings, or `-` for no arguments |
 
 Blank lines and lines beginning with `#` are ignored. Seven-column rows remain
 valid. Eight-column rows add mode; nine-column rows add completion. Ten columns
-add enabled; eleven add dependency metadata. Supplied
+add enabled; eleven add dependency metadata. Twelve add execution kind; thirteen
+add explicit arguments. Supplied
 fields must be nonempty, so use `-` for a default. `--tsv` emits nine columns
 with resolved mode and completion; `--deps-tsv` appends dependencies and status.
 `--state-tsv` emits those nine columns followed by enabled, dependencies and
-status. All listing modes retain disabled and unavailable rows.
+status. `--execution-tsv` appends kind and arguments to `--state-tsv`.
+The existing output layouts remain unchanged. All listing modes retain disabled
+and unavailable rows.
 
 `auto` checks the effective shipped adapter path, never the entry ID. Renaming
 an adapter entry keeps its dependency checks; replacing its command changes
@@ -187,6 +192,53 @@ them. Unknown custom executables have no inferred external requirements. Their
 file must still exist and be executable. Declare requirements explicitly when
 needed, for example `python3 fzf|sk`, or use `-` to bypass external checks. This
 metadata does not evaluate shell expressions or change command arguments.
+
+### User scripts and arguments
+
+`plugin` resolves an executable relative to the plugin checkout. `absolute`
+requires an absolute executable path and expands a literal `~/` prefix once.
+`user` resolves a relative executable beneath the user-script directory. These
+kinds require a regular executable file, including for disabled rows, and check
+it again at dispatch. Paths are single fields; do not add shell quotes around
+them. Spaces and apostrophes are part of the filename. Relative paths are joined
+to their selected directory; `..` is allowed, so this is not a sandbox.
+
+The user-script directory defaults to
+`${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/scripts`. A nonempty
+`TMUX_POPUPS_USER_SCRIPT_DIRECTORY` environment value overrides
+`@tmux-popups-user-script-directory`, which overrides that default. The selected
+directory must be absolute after literal home expansion. The plugin never
+creates, updates or removes user scripts or the local registry. Keep these files
+outside the plugin checkout and `${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups`,
+which contains generated data. Reload after changing the registry or options.
+
+```tmux
+set -g @tmux-popups-user-script-directory '~/my scripts'
+```
+
+For example, these rows use actual tabs between fields:
+
+```tsv
+personal	X	x	Personal script	80%	80%	record user's argv	popup	foreground	on	-	user	["two words", "it's literal", ""]
+external	-	-	External script	80%	80%	/home/me/my scripts/task	command	foreground	on	-	absolute	["--project", "project with spaces"]
+expression	-	-	Explicit shell	80%	80%	printf hello | cat	command	foreground	on	-	shell	-
+```
+
+JSON arguments require Python 3. Each string is exactly one argument, including
+empty strings, spaces, apostrophes and JSON-escaped tabs or newlines. NUL and
+surrogate code points are rejected. Arguments never expand `~`, variables,
+globs or command substitutions. Keep the array on one physical TSV line.
+Missing Python or malformed arguments fail validation before cache publication.
+Old rows with no arguments do not gain a Python dependency.
+
+`shell` explicitly opts into `${SHELL:-bash} -c` and treats `command` as a shell
+expression. It requires `arguments` to be `-`; put any shell syntax in the
+expression itself. Shell expressions are evaluated only during execution.
+`auto` infers dependencies only for `plugin` adapters. Other kinds have no
+inferred requirements; declare their dependencies explicitly. The legacy
+`command` value `-` with kind `plugin` still opens an interactive shell and
+accepts no arguments. Existing modes, completion policies, invoking context,
+enabled controls and registry precedence apply to all execution kinds.
 
 Availability policies apply to enabled rows:
 
