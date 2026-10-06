@@ -29,3 +29,11 @@ home, spaces, absolute/relative paths and unevaluated shell expressions.
 Registry-selection regressions also cover fresh dispatch after generation,
 command overrides, environment precedence, help output and explicit missing-file
 failures. These cases failed before the shared selection helper was added.
+
+Chat checks in `test_chat.py` run provider and clipboard substitutes in a direct
+PTY and an attached tmux popup. They cover valid continuation, malformed JSON,
+missing fields, empty output, nonzero provider exits, failed copy, queued input,
+quit and copy+quit controls, and Ctrl-C, SIGHUP and explicit popup-close cleanup of an owned request tree while an
+unrelated process stays alive. A restricted PATH checks missing dependencies.
+They verify temporary-file cleanup and preservation of the last valid session.
+These fixtures do not qualify an actual terminal application or real provider.

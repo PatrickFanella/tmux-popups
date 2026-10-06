@@ -46,59 +46,90 @@ close_popup_and_exit() {
   exit 0
 }
 
-json_field() {
-  local field="$1"
-  node -e '
-    const field = process.argv[1]
-    let input = ""
-    process.stdin.setEncoding("utf8")
-    process.stdin.on("data", chunk => input += chunk)
-    process.stdin.on("end", () => {
-      const data = JSON.parse(input)
-      process.stdout.write(data[field] || "")
-    })
-  ' "$field"
+# These belong to this launch, including while a request is running.
+request_dir=""
+request_pid=""
+cleanup_request() {
+  if [[ -n "$request_pid" ]]; then
+    kill -TERM -- "-$request_pid" 2>/dev/null || true
+    sleep 0.05
+    kill -KILL -- "-$request_pid" 2>/dev/null || true
+    wait "$request_pid" 2>/dev/null || true
+    request_pid=""
+  fi
+  [[ -z "$request_dir" ]] || rm -rf -- "$request_dir"
+  request_dir=""
+}
+trap cleanup_request EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+request_error() {
+  printf '%s%s%s%s\n\n' "$red" "$bold" "$1" "$reset" >&2
 }
 
 ocq_with_spinner() {
-  local prompt="$1" json_file err_file pid status frame frames i
-  json_file="$(mktemp)"
-  err_file="$(mktemp)"
-  trap 'rm -f "$json_file" "$err_file"' EXIT INT TERM
+  local prompt="$1" status frame frames i
+  request_dir="$(mktemp -d)" || { request_error "Cannot create request files."; return 1; }
   frames=$'|/-\\'
   i=0
 
-  ocq "${args[@]}" "$prompt" >"$json_file" 2>"$err_file" </dev/null &
-  pid=$!
-
-  while kill -0 "$pid" 2>/dev/null; do
+  # A new process group lets interruption stop this request and its children.
+  setsid ocq "${args[@]}" "$prompt" >"$request_dir/json" 2>"$request_dir/error" </dev/null &
+  request_pid=$!
+  while kill -0 "$request_pid" 2>/dev/null; do
     frame="${frames:i++%${#frames}:1}"
     printf '\r%s%sThinking%s %s' "$dim" "$cyan" "$reset" "$frame" >&2
     sleep 0.12
   done
-
-  wait "$pid"
+  wait "$request_pid"
   status=$?
+  # Also stop children left behind by a provider that has already exited.
   printf '\r\033[2K' >&2
-
   if (( status != 0 )); then
-    [[ -s "$err_file" ]] && cat "$err_file" >&2
-    rm -f "$json_file" "$err_file"
-    return "$status"
+    request_error "ocq failed (exit $status). Try again."
+    cleanup_request
+    return 1
   fi
 
-  cat "$json_file"
-  rm -f "$json_file" "$err_file"
+  # Validate once. NUL separators preserve newlines and arbitrary response text.
+  if ! node -e '
+    const fs = require("fs");
+    try {
+      const data = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+      if (!data || typeof data.sessionID !== "string" || !data.sessionID.trim() ||
+          typeof data.text !== "string" || !data.text.trim() ||
+          data.sessionID.includes("\u0000") || data.text.includes("\u0000")) throw Error();
+      process.stdout.write(data.sessionID + "\u0000" + data.text + "\u0000");
+    } catch (_) { process.exitCode = 1; }
+  ' "$request_dir/json" >"$request_dir/validated" 2>/dev/null; then
+    request_error "Invalid or empty ocq response. Try again."
+    cleanup_request
+    return 1
+  fi
+  {
+    IFS= read -r -d '' session_id
+    IFS= read -r -d '' resp
+  } <"$request_dir/validated"
+  cleanup_request
 }
+
+for dependency in ocq node setsid; do
+  if ! command -v "$dependency" >/dev/null 2>&1; then
+    request_error "Required chat dependency missing: $dependency."
+    exit 1
+  fi
+done
 
 clear 2>/dev/null || true
 printf '%s%s%s %s%s%s\n' "$bold" "$magenta" "Quick Chat" "$dim" "· $model" "$reset"
-printf '%s/exit or /quit to close · c copies · cq copies+quits · q quits%s\n' "$dim" "$reset"
+printf '%s/exit or /quit to close · c copies · cq copies+quits · q quits · Ctrl-C cancels%s\n' "$dim" "$reset"
 rule
 
 while true; do
   printf '%s%sYou%s %s›%s ' "$bold" "$cyan" "$reset" "$dim" "$reset"
-  read -r line || break
+  IFS= read -r line || break
   debug_input prompt "$line"
   line="$(normalize_input "$line")"
   [[ -z "$line" ]] && break
@@ -107,14 +138,9 @@ while true; do
   args=(--json --model "$model")
   [[ -n "$session_id" ]] && args+=(--session "$session_id")
 
-  if ! json=$(ocq_with_spinner "$line"); then
-    printf '%s%socq failed%s\n' "$red" "$bold" "$reset" >&2
-    echo
+  if ! ocq_with_spinner "$line"; then
     continue
   fi
-
-  session_id=$(printf '%s' "$json" | json_field sessionID)
-  resp=$(printf '%s' "$json" | json_field text)
 
   printf '\n%s%sAssistant%s %s›%s\n' "$bold" "$green" "$reset" "$dim" "$reset"
   printf '%s\n\n' "$resp"
@@ -126,8 +152,19 @@ while true; do
   key="$(normalize_input "$key")"
   is_quit "$key" && close_popup_and_exit
   case "$key" in
-    c|C|copy) printf '%s' "$resp" | copy_text && printf '%s%sCopied.%s\n' "$green" "$bold" "$reset"; echo ;;
-    cq|CQ|cQ|Cq|copyquit|copy-quit) printf '%s' "$resp" | copy_text && close_popup_and_exit ;;
+    c|C|copy)
+      if printf '%s' "$resp" | copy_text; then
+        printf '%s%sCopied.%s\n' "$green" "$bold" "$reset"
+      else
+        request_error "Copy failed. Response is still available above."
+      fi
+      echo ;;
+    cq|CQ|cQ|Cq|copyquit|copy-quit)
+      if printf '%s' "$resp" | copy_text; then
+        close_popup_and_exit
+      else
+        request_error "Copy failed. Response is still available above."
+      fi ;;
     *) echo ;;
   esac
 done

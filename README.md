@@ -228,7 +228,13 @@ chat	O	g	quick chat	80%	80%	scripts/tools/chat.sh
 yazi	Y	r	yazi	80%	80%	scripts/tools/yazi.sh
 ```
 
-`chat` needs [`ocq`](https://github.com/PatrickFanella/ocq).
+`chat` needs [`ocq`](https://github.com/PatrickFanella/ocq), Node.js and
+`setsid`. Ctrl-C while waiting cancels the chat launch and its current request
+process group. It does not stop other provider requests. Input typed while
+waiting stays queued for the continuation controls and next prompt. Invalid or
+empty responses and failed requests leave the last valid session available for
+retry. Clipboard failures display an error and keep the chat open, including
+when using `cq`.
 
 ## List and dependency helpers
 
