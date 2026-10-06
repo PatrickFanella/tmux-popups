@@ -139,3 +139,32 @@ valid_dimension() {
   [[ "$1" =~ ^[1-9][0-9]*$ && ${#1} -le 10 ]] || return 1
   (( $1 <= 2147483647 ))
 }
+
+# Missing origin means no action, rather than tmux's default target selection.
+origin_pane() {
+  local actual
+  [[ -n "${TMUX_POPUPS_PANE:-}" && -n "${TMUX_POPUPS_SESSION:-}" ]] || {
+    printf 'tmux-popups: origin pane/session was not supplied; action cancelled\n' >&2
+    return 1
+  }
+  actual="$(tmux display-message -p -t "$TMUX_POPUPS_PANE" '#{session_id}' 2>/dev/null)" || return 1
+  [[ "$actual" == "$TMUX_POPUPS_SESSION" ]] || {
+    printf 'tmux-popups: origin pane/session vanished; action cancelled\n' >&2
+    return 1
+  }
+}
+
+origin_client() {
+  if [[ -n "${TMUX_POPUPS_CLIENT:-}" ]] &&
+    tmux list-clients -F '#{client_name}' | grep -Fx -- "$TMUX_POPUPS_CLIENT" >/dev/null; then
+    return 0
+  else
+    printf 'tmux-popups: origin client vanished or was not supplied; action cancelled\n' >&2
+    return 1
+  fi
+}
+
+close_origin_popup() {
+  origin_client || return 1
+  tmux display-popup -C -c "$TMUX_POPUPS_CLIENT"
+}

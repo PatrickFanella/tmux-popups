@@ -41,7 +41,7 @@ is_quit() {
 
 close_popup_and_exit() {
   if [[ -n "${TMUX:-}" ]]; then
-    tmux display-popup -C 2>/dev/null || true
+    close_origin_popup || true
   fi
   exit 0
 }
