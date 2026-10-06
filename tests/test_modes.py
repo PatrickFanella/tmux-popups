@@ -94,7 +94,8 @@ class ModeTests(unittest.TestCase):
                         if completion != "background":
                             # tmux displays run-shell exit failures in view mode
                             # after the popup closes or direct command exits.
-                            self.wait_until(lambda: b"returned 23" in self.client_output[first])
+                            self.wait_until(lambda: self.tmux("display-message", "-p", "-t", origins["fixture"]["PANE"],
+                                                            "#{pane_in_mode}").stdout.strip() == "1")
                             os.write(first, b"q")
                             self.wait_until(lambda: self.tmux("display-message", "-p", "-t", origins["fixture"]["PANE"],
                                                             "#{pane_in_mode}").stdout.strip() == "0")
