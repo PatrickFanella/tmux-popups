@@ -103,6 +103,58 @@ class AvailabilityTests(unittest.TestCase):
         self.assertEqual(self.states()["fixture"][-1], "ok")
         self.assertEqual(self.run_script("scripts/run-popup.sh", "fixture", input="").returncode, 0)
 
+    def test_logs_requires_both_branches_and_preserves_dependency_overrides(self):
+        isolated = self.home / "logs-bin"
+        isolated.mkdir()
+        for name in ["bash", "dirname", "awk", "mktemp", "rm", "cut", "wc", "cat", "sleep", "mkdir", "mv"]:
+            (isolated / name).symlink_to(shutil.which(name))
+        (isolated / "tmux").symlink_to(self.bin / "tmux")
+        env = dict(self.env, PATH=str(isolated))
+        tools = {}
+        for name in ["journalctl", "tail"]:
+            tools[name] = isolated / name
+            tools[name].write_text("#!/bin/bash\nprintf '%s\\n' " + name + " \"$@\"\n")
+            tools[name].chmod(0o755)
+        self.registry(command="scripts/tools/logs.sh")
+        self.assertEqual(self.states(env)["fixture"][-1], "ok")
+        self.run_script("scripts/generate-config.sh", env=env)
+        self.assertIn('bind-key "X"', self.generated().read_text())
+        self.assertNotIn("availability fixture [missing:", self.generated().read_text())
+        for input, expected in [("s\nfixture.service\n", "journalctl\n--user\n-u\nfixture.service\n-f\n"),
+                                ("f\nfixture.log\n", "tail\n-f\nfixture.log\n")]:
+            self.assertTrue(self.run_script("scripts/run-popup.sh", "fixture", env=env,
+                                           input=input).stdout.endswith(expected))
+        bodies = {name: path.read_text() for name, path in tools.items()}
+        for missing, installed, input in [("journalctl", "tail", "f\nfixture.log\n"),
+                                           ("tail", "journalctl", "s\nfixture.service\n")]:
+            with self.subTest(missing=missing):
+                for name, path in tools.items():
+                    path.write_text(bodies[name])
+                    path.chmod(0o755)
+                tools[missing].unlink()
+                self.registry(command="scripts/tools/logs.sh")
+                self.assertEqual(self.states(env)["fixture"][-1], "missing:" + missing)
+                self.tmux("set-option", "-g", "@tmux-popups-availability", "show-disabled")
+                self.run_script("scripts/generate-config.sh", env=env)
+                config = self.generated().read_text()
+                self.assertIn("-availability fixture [missing:" + missing + "]", config)
+                self.assertNotIn('bind-key "X"', config)
+                result = self.run_script("scripts/run-popup.sh", "fixture", env=env,
+                                         input=input, check=False)
+                self.assertEqual(result.returncode, 127)
+                self.assertIn("unavailable (missing:" + missing + ")", result.stderr)
+                self.assertEqual(result.stdout, "")  # Reject before advertising either branch.
+                self.tmux("set-option", "-g", "@tmux-popups-availability", "hide-unavailable")
+                self.run_script("scripts/generate-config.sh", env=env)
+                self.assertNotIn("availability fixture", self.generated().read_text())
+                for deps in ["-", installed]:
+                    self.registry(command="scripts/tools/logs.sh", deps=deps)
+                    self.assertEqual(self.states(env)["fixture"][10:], [deps, "ok"])
+                    self.run_script("scripts/generate-config.sh", env=env)
+                    self.assertIn('bind-key "X"', self.generated().read_text())
+                    self.assertIn(installed + "\n", self.run_script("scripts/run-popup.sh", "fixture",
+                                                                 env=env, input=input).stdout)
+
     def test_effective_command_renames_and_custom_executable(self):
         self.registry(id="chat", command="scripts/tools/calc.sh")
         self.assertEqual(self.states()["chat"][10:], ["python3", "ok"])

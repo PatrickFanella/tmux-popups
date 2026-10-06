@@ -211,7 +211,7 @@ deps_for_command() {
     scripts/tools/clipboard.sh) printf 'cliphist fzf wl-copy' ;;
     scripts/tools/info.sh) printf 'curl newsboat editor less' ;;
     scripts/tools/timer.sh) printf sleep ;;
-    scripts/tools/logs.sh) printf 'journalctl|tail' ;;
+    scripts/tools/logs.sh) printf 'journalctl tail' ;;
     scripts/tools/watch.sh) printf watch ;;
     scripts/tools/markdown.sh) printf 'fzf glow|bat|less' ;;
     scripts/tools/lazygit.sh) printf lazygit ;;
