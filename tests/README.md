@@ -36,3 +36,9 @@ rejection, exactly 60 sleeps for a one-minute timer, and owned-child cleanup.
 An attached tmux popup accepts 09 and Ctrl-C cancels its owned sleep. This
 pseudoterminal evidence does not qualify actual terminal applications for #12
 or #24.
+
+Clipboard checks use empty, small and 100,000-row histories, producer failures,
+picker cancellation/failure and failed decoding. A clipboard substitute checks
+exact selected bytes, including NUL, non-UTF-8 bytes and trailing newlines,
+without touching the system clipboard. Owned temporary files are checked after
+each run. Real cliphist/Wayland checks remain separate environment evidence.
