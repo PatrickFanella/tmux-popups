@@ -8,7 +8,7 @@ local_registry="$(resolve_local_registry)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/list-popups.sh [--tsv|--pretty|--deps|--deps-tsv|--state-tsv]
+Usage: scripts/list-popups.sh [--tsv|--pretty|--deps|--deps-tsv|--state-tsv|--execution-tsv]
 
 Merges popups.tsv with an optional local registry. Later rows with the same id
 override earlier rows. Blank lines and # comments are ignored.
@@ -18,7 +18,7 @@ EOF
 # Validate every source row, even one replaced by a later same-ID override.
 # Buffer the result so a failure never emits a usable partial registry.
 merged_tsv() (
-  local registries=("$default_registry") records source line id direct menu title width height command launch_mode completion key slot canonical enabled deps override profile
+  local registries=("$default_registry") records source line id direct menu title width height command launch_mode completion key slot canonical enabled deps override profile kind arguments
   local -a order=()
   local -A rows=() locations=() shortcuts=() target_keys=() overrides=()
   [[ -r "$local_registry" ]] && registries+=("$local_registry")
@@ -38,10 +38,12 @@ merged_tsv() (
     $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode" ||
     $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion" ||
     $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled" ||
-    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled\tdeps" { next }
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled\tdeps" ||
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled\tdeps\tkind" ||
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled\tdeps\tkind\targuments" { next }
     {
-      if (NF < 7 || NF > 11) {
-        printf "%s:%d: expected 7 TSV fields or 8/9/10/11 extended fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
+      if (NF < 7 || NF > 13) {
+        printf "%s:%d: expected 7 TSV fields or 8/9/10/11/12/13 extended fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
         bad = 1; next
       }
       for (i = 1; i <= NF; i++) if ($i == "") {
@@ -53,6 +55,8 @@ merged_tsv() (
       if (n < 9) $9 = "foreground"
       if (n < 10) $10 = "on"
       if (n < 11) $11 = "auto"
+      if (n < 12) $12 = "plugin"
+      if (n < 13) $13 = "-"
       print FILENAME "\t" FNR "\t" $0
     }
     END { if (bad) exit 1 }
@@ -93,7 +97,7 @@ merged_tsv() (
     printf 'bind-key -T "%s" "%s" display-message probe%d\nlist-keys -T "%s"\n' \
       "$table" "$quoted" "${#inputs[@]}" "$table" >>"$probe"
   }
-  while IFS=$'\t' read -r source line id direct menu title width height command launch_mode completion enabled deps; do
+  while IFS=$'\t' read -r source line id direct menu title width height command launch_mode completion enabled deps kind arguments; do
     [[ -n "$source" ]] || continue
     slot="$source:$line"
     [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "$slot: unsupported popup id: $id"
@@ -107,12 +111,13 @@ merged_tsv() (
     for key in "$width" "$height"; do
       valid_dimension "$key" || die "$slot: invalid dimension: $key"
     done
-    [[ "$command" == "-" || ( -f "$root/$command" && -x "$root/$command" ) ]] || die "$slot: executable target not found or not executable: $command"
+    [[ "$kind" != - ]] || kind=plugin
+    resolve_execution "$command" "$kind" "$arguments" "$slot"
     if [[ "$launch_mode" == "-" ]]; then
       # Compatibility follows the adapter path, never an entry ID. Explicit
       # modes bypass this legacy option, including on same-ID local overrides.
-      case "$command" in
-        scripts/tools/yazi.sh|scripts/tools/home.sh|scripts/tools/projects.sh|scripts/tools/downloads.sh)
+      case "$kind:$command" in
+        plugin:scripts/tools/yazi.sh|plugin:scripts/tools/home.sh|plugin:scripts/tools/projects.sh|plugin:scripts/tools/downloads.sh)
           launch_mode="$(tmux show-option -gqv @tmux-popups-yazi-mode 2>/dev/null || true)"
           launch_mode="${launch_mode:-window}"
           [[ "$launch_mode" == popup || "$launch_mode" == window ]] || die "$slot: invalid legacy Yazi mode: $launch_mode" ;;
@@ -129,7 +134,7 @@ merged_tsv() (
       background) [[ "$launch_mode" == command ]] || die "$slot: background completion requires command mode" ;;
       *) die "$slot: invalid completion: $completion" ;;
     esac
-    [[ "$launch_mode:$command" != command:- ]] || die "$slot: command mode requires an executable target"
+    [[ "$launch_mode:$kind:$command" != command:plugin:- ]] || die "$slot: command mode requires an executable target"
     [[ "$enabled" == on || "$enabled" == off ]] || die "$slot: invalid enabled setting: $enabled"
     valid_dependencies "$deps" || die "$slot: invalid dependencies: $deps"
     if [[ "$source" == "$default_registry" && "$profile" == full ]]; then enabled=on; fi
@@ -138,9 +143,11 @@ merged_tsv() (
       [[ "$override" == on || "$override" == off ]] || die "$slot: invalid enabled override: $override"
       enabled="$override"
     fi
-    [[ "$deps" != auto ]] || deps="$(deps_for_command "$command")"
+    if [[ "$deps" == auto ]]; then
+      if [[ "$kind" == plugin ]]; then deps="$(deps_for_command "$command")"; else deps=-; fi
+    fi
     [[ -v rows["$id"] ]] || order+=("$id")
-    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"$'\t'"$launch_mode"$'\t'"$completion"$'\t'"$enabled"$'\t'"$deps"
+    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"$'\t'"$launch_mode"$'\t'"$completion"$'\t'"$enabled"$'\t'"$deps"$'\t'"$kind"$'\t'"$arguments"
     locations["$id"]="$slot"
   done <<<"$records"
   local menu_key reload_key enable_vscode
@@ -192,7 +199,7 @@ merged_tsv() (
     target_key v; shortcuts["menu:$canonical"]='built-in vscode'
   fi
   for id in "${order[@]}"; do
-    IFS=$'\t' read -r id direct menu title width height command launch_mode completion enabled deps <<<"${rows[$id]}"
+    IFS=$'\t' read -r id direct menu title width height command launch_mode completion enabled deps kind arguments <<<"${rows[$id]}"
     for key in direct menu; do
       [[ "${!key}" == "-" ]] && continue
       target_key "${!key}"
@@ -210,14 +217,16 @@ case "$mode" in
   --tsv) merged_tsv | cut -f1-9 ;;
   --pretty)
     printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' id direct menu title width height mode completion command
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps; do
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps kind arguments; do
       printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$launch_mode" "$completion" "$command"
     done
     ;;
-  --deps|--deps-tsv|--state-tsv)
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps; do
+  --deps|--deps-tsv|--state-tsv|--execution-tsv)
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps kind arguments; do
       status="$(deps_status "$deps")"
-      if [[ "$mode" == "--state-tsv" ]]; then
+      if [[ "$mode" == "--execution-tsv" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$enabled" "$deps" "$status" "$kind" "$arguments"
+      elif [[ "$mode" == "--state-tsv" ]]; then
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$enabled" "$deps" "$status"
       elif [[ "$mode" == "--deps-tsv" ]]; then
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$deps" "$status"

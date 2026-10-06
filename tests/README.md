@@ -83,3 +83,13 @@ unavailable. An unrunnable khal uses the cal fallback. Invalid enabled/dependenc
 metadata, including disabled rows and empty explicit enabled options, preserves
 the last-good config and bindings. Existing regressions select full/ignore to
 continue exercising the pre-existing complete binding configuration.
+
+User-script checks execute outside scripts whose paths contain spaces and
+apostrophes through CLI, direct bindings and menu actions in popup, window and
+foreground/background command modes. They compare exact argument values,
+including empty strings and escaped line breaks, exercise directory and registry
+precedence, reject malformed JSON and missing/nonexecutable targets, and replace
+a disposable plugin installation before reloading. User script and registry
+bytes must survive that replacement. Legacy output layouts and seven/eight/nine/
+eleven-column rows retain their behavior. These synthetic PTY checks leave the
+actual terminal/tool/provider gates in #12/#24 and owner release gate in #25 open.
