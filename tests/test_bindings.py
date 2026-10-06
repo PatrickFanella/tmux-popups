@@ -110,8 +110,13 @@ class BindingTests(unittest.TestCase):
         self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(registry))
         registry.write_text("fixture\tC-i\tx\tfixture\t70%\t70%\t-\n")
         self.tmux("set-option", "-g", "@tmux-popups-menu-key", "Tab")
-        self.load()
-        self.load()
+        # Registry generation now rejects duplicate shortcuts for #11. Exercise
+        # the reconciler directly to retain its canonical duplicate-slot test.
+        self.generated().parent.mkdir(parents=True, exist_ok=True)
+        self.generated().write_text('bind-key "C-i" display-message fixture\n'
+                                    'bind-key "Tab" display-message menu\n')
+        self.run_script("scripts/apply-config.sh", str(self.generated()))
+        self.run_script("scripts/apply-config.sh", str(self.generated()))
         self.tmux("set-option", "-g", "@tmux-popups-menu-key", "M-m")
         registry.write_text("")
         self.load()

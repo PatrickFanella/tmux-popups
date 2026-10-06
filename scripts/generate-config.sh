@@ -7,6 +7,20 @@ registry="$root/popups.tsv"
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups"
 out="$cache_dir/generated.conf"
 mkdir -p "$cache_dir"
+# Each writer owns its file and validation tables. The last successful rename
+# wins; readers see either complete version, never an in-progress write.
+temporary="$(mktemp "$cache_dir/.generated.XXXXXXXX")"
+table="tmux-popups-generate-${temporary##*/}"
+cleanup() {
+  local status=$?
+  tmux unbind-key -a -T "$table" 2>/dev/null || true
+  tmux unbind-key -a -T "$table-menu" 2>/dev/null || true
+  rm -f "$temporary" "$temporary.stage" "$temporary.menu"
+  return "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 tmux_option() {
   local name="$1" fallback="$2" value
@@ -51,6 +65,9 @@ validate_literal() {
 validate_literal 'plugin path' "$root"
 validate_literal 'config path' "$config_file"
 validate_literal 'registry path' "$local_registry"
+valid_dimension "$default_width" && [[ "$default_width" != "-" ]] || die "invalid default width: $default_width"
+valid_dimension "$default_height" && [[ "$default_height" != "-" ]] || die "invalid default height: $default_height"
+validate_literal 'vscode command' "$vscode_command"
 rows="$("$root/scripts/list-popups.sh" --tsv)"
 while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
@@ -107,10 +124,44 @@ popup_action() {
   done
 
   if [[ "$enable_vscode" != "off" ]]; then
-    vscode_action="run-shell -c \"#{pane_current_path}\" \"$(q "$vscode_command")\""
+    # Defer the directory format past display-menu parsing. run-shell then
+    # expands shell quoting once, preserving literal pane directory bytes.
+    vscode_action="run-shell \"cd -- ##{q:pane_current_path} && $(q "$vscode_command")\""
     printf ' "vscode here" v "%s"' "$(q "$vscode_action")"
   fi
   reload_action="source-file \"$(q "$config_file")\"; display-message \"tmux config reloaded\""
   printf ' "reload tmux" R "%s"' "$(q "$reload_action")"
   printf ' "Exit" q ""\n'
-} >"$out"
+} >"$temporary"
+
+# Parse against the target server, then execute bindings only in private tables.
+# Parsing alone does not check key names. Count canonical slots to catch aliases
+# that refer to the same key without changing effective prefix bindings.
+tmux source-file -n "$temporary"
+expected=0
+while IFS= read -r line; do
+  [[ "$line" == 'bind-key "'* ]] || continue
+  printf 'bind-key -T "%s" %s\n' "$table" "${line#bind-key }"
+  ((expected+=1))
+done <"$temporary" >"$temporary.stage"
+tmux source-file "$temporary.stage"
+actual="$(tmux list-keys -T "$table" | wc -l)"
+[[ "$actual" -eq "$expected" ]] || die "duplicate direct shortcut after target tmux key normalization"
+expected=2
+{
+  printf 'bind-key -T "%s" "R" display-message reload\n' "$table-menu"
+  printf 'bind-key -T "%s" "q" display-message exit\n' "$table-menu"
+  if [[ "$enable_vscode" != off ]]; then
+    printf 'bind-key -T "%s" "v" display-message vscode\n' "$table-menu"
+    ((expected+=1))
+  fi
+  while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
+    [[ -n "$id" && "$row_menu_key" != "-" ]] || continue
+    printf 'bind-key -T "%s" "%s" display-message "%s"\n' "$table-menu" "$(q "$row_menu_key")" "$id"
+    ((expected+=1))
+  done <<<"$rows"
+} >"$temporary.menu"
+tmux source-file "$temporary.menu"
+actual="$(tmux list-keys -T "$table-menu" | wc -l)"
+[[ "$actual" -eq "$expected" ]] || die "duplicate menu shortcut after target tmux key normalization"
+mv -f -- "$temporary" "$out"

@@ -379,5 +379,37 @@ be safely identified or restored automatically.
 Reload through `tmux-popups.tmux` so generation and reconciliation both run.
 The reconciler validates new bindings in a temporary key table before changing
 prefix keys, serializes reloads on the server, and rolls back touched keys and
-ownership state if applying the transition fails. Cache publication and registry
-validation are separate work in #11.
+ownership state if applying the transition fails.
+
+
+### Registry validation and cache publication
+
+Every non-comment registry row must have exactly seven nonempty TSV fields.
+IDs accept letters, digits, underscores and hyphens. Keys accept a single
+printable character or a named tmux key with C-, M- or S- modifiers. Use `-`
+to disable a shortcut. Dimensions accept cell counts from 1 through 2147483647, 1% through
+100%, or `-` for the configured default. Commands must name an existing
+executable plugin-relative file, or `-` for the shell. Optional tool availability
+remains a dependency diagnostic, so a wrapper can be valid while its tool is
+not installed. Titles cannot contain tmux formats or carriage returns.
+
+Errors identify the registry file and line, and listing emits no partial TSV.
+All source rows are checked, including rows replaced by an intentional same-ID
+override. Shortcuts are checked on the final merged rows. Duplicate direct or
+menu shortcuts and collisions with the built-in menu, reload, Exit and enabled
+vscode shortcuts fail generation. Direct and menu keys use separate namespaces.
+Listing checks every source key against the selected tmux server before merging.
+Target-normalized collisions identify both source rows or the built-in slot.
+
+Listing and generation require a running target tmux server. Generation writes
+an owned temporary file beside `generated.conf`, parses it on that server, and validates bindings
+in disposable key tables without changing effective keys or ownership. Only a
+successful validation replaces the cache with an atomic rename. Failure leaves
+the last valid cache intact and removes owned temporary files and tables.
+Overlapping writers use separate files and tables; the last successful rename
+wins. Readers see a complete previous or new config. A failed writer cannot
+replace a successful writer's config. Binding application remains the separate
+server-serialized transaction described above.
+
+The configurable vscode menu command runs through `run-shell` with a shell-quoted
+pane directory, including on tmux 3.3a. It retains shell command semantics.

@@ -113,3 +113,29 @@ rule() {
   setup_colors
   printf '%s%s%s\n' "$dim" "────────────────────────────────────────" "$reset"
 }
+
+# Registry keys use tmux modifier prefixes, named keys or a single printable key.
+# Listing validates every source key against the selected server before merging.
+valid_key() {
+  local key="$1"
+  [[ "$key" == "-" ]] && return 0
+  while [[ "$key" == [CMS]-* ]]; do key="${key:2}"; done
+  [[ ${#key} == 1 && "$key" != [[:cntrl:]] ]] && return 0
+  [[ "$key" =~ ^(Enter|Tab|Escape|BSpace|Space|Up|Down|Left|Right|Home|End|NPage|PPage|PageUp|PageDown|PgUp|PgDn|Insert|IC|Delete|DC|BTab|BackTab|F([1-9]|[1-5][0-9]|6[0-3])|KP[0-9]|KPEnter|KPPlus|KPMinus|KPMultiply|KPDivide|KPPeriod)$ ]]
+}
+
+canonical_key() {
+  canonical="$1"
+  case "$1" in
+    C-m) canonical=Enter ;; C-i) canonical=Tab ;; C-h) canonical=BSpace ;;
+    'C-[') canonical=Escape ;; ' ') canonical=Space ;;
+    PageUp|PgUp) canonical=PPage ;; PageDown|PgDn) canonical=NPage ;;
+    IC) canonical=Insert ;; DC) canonical=Delete ;; BackTab) canonical=BTab ;;
+  esac
+}
+
+valid_dimension() {
+  [[ "$1" == "-" || "$1" =~ ^([1-9]|[1-9][0-9]|100)%$ ]] && return 0
+  [[ "$1" =~ ^[1-9][0-9]*$ && ${#1} -le 10 ]] || return 1
+  (( $1 <= 2147483647 ))
+}

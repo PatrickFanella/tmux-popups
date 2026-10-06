@@ -51,3 +51,13 @@ reloads, restore repeat flags and multiline notes, preserve user replacements
 and explicit unbinds, and leave root/custom tables unchanged. Alias collisions,
 invalid-key rejection, partial-apply rollback and checkout/cache changes are
 covered. Special paths and note text must not execute injection markers.
+
+Registry checks reject short/extra rows, every empty field, invalid IDs, keys
+and dimensions, missing or nonexecutable targets, and duplicate shortcuts.
+Same-ID overrides keep their order and all source rows retain validation.
+Generation failures preserve the last-good config and effective bindings and
+ownership. Controlled overlapping writers prove complete publication and that
+a failed writer cannot replace another writer's valid cache. Tests use only
+owned HOME/XDG files and private tmux sockets. The editor regression checks a
+pane directory containing spaces, apostrophes, a backslash-semicolon and shell
+expressions on tmux 3.3a and newer.
