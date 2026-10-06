@@ -81,6 +81,27 @@ class QuotingTests(unittest.TestCase):
         self.wait_until(marker.exists)
         self.assertEqual(marker.read_text(), "editor called")
 
+    def test_tmux_format_data_is_rejected(self):
+        registry = self.home / "format.tsv"
+        registry.write_text("fixture\tX\tx\t#(touch injected)\t70%\t70%\t-\n")
+        self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(registry))
+        result = self.run_script("scripts/generate-config.sh", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unsupported tmux format", result.stderr)
+        registry.write_text("fixture\tX\tx\ttitle\t70%\t70%\t-\n")
+        self.tmux("set-option", "-g", "@tmux-popups-config-file", "#{session_name}.conf")
+        result = self.run_script("scripts/generate-config.sh", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("config path", result.stderr)
+        self.tmux("set-option", "-gu", "@tmux-popups-config-file")
+        destination = self.base / "plugin #{session_name}"
+        self.checkout.rename(destination)
+        self.checkout = destination
+        result = self.run_script("scripts/generate-config.sh", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("plugin path", result.stderr)
+        self.assertFalse((self.home / "injected").exists())
+
     def test_unsupported_id_is_rejected_as_data(self):
         registry = self.home / "bad.tsv"
         registry.write_text("bad;touch injected\tX\tx\ttitle\t70%\t70%\t-\n")

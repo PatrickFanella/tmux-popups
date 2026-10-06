@@ -43,9 +43,18 @@ shell_quote() {
   printf "'%s'" "$value"
 }
 
+validate_literal() {
+  case "$2" in
+    *'#{'*|*'#('*|*$'\n'*|*$'\r'*) die "unsupported tmux format or line break in $1: $2" ;;
+  esac
+}
+validate_literal 'plugin path' "$root"
+validate_literal 'config path' "$config_file"
+validate_literal 'registry path' "$local_registry"
 rows="$("$root/scripts/list-popups.sh" --tsv)"
-while IFS=$'\t' read -r id _; do
+while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
+  validate_literal "title for $id" "$title"
 done <<<"$rows"
 
 is_yazi_id() {
