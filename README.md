@@ -182,6 +182,8 @@ Choose an adapter that does not require terminal input for command entries.
 `run-popup.sh <id>` executes adapters directly for CLI callers. `--launch` is the
 binding/menu entrypoint that creates popup or window presentation. Command
 completion policy applies to both entrypoints.
+CLI calls without a running tmux server validate registry keys using a private,
+temporary server, then remove that server and its socket before dispatch.
 
 ## Local override registry
 
