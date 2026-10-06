@@ -29,3 +29,5 @@ home, spaces, absolute/relative paths and unevaluated shell expressions.
 Registry-selection regressions also cover fresh dispatch after generation,
 command overrides, environment precedence, help output and explicit missing-file
 failures. These cases failed before the shared selection helper was added.
+
+Quoting checks execute direct and menu actions in windows and attached popups from a checkout with spaces, apostrophes and shell metacharacters. They also exercise reload paths and the configurable editor command. Unsupported entry IDs fail before generation. Attached clients use synthetic PTYs and do not qualify actual terminals for #12 or #24.
