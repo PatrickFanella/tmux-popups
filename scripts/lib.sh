@@ -115,7 +115,7 @@ rule() {
 }
 
 # Registry keys use tmux modifier prefixes, named keys or a single printable key.
-# Generation also validates keys against the selected server, including aliases.
+# Listing validates every source key against the selected server before merging.
 valid_key() {
   local key="$1"
   [[ "$key" == "-" ]] && return 0

@@ -90,6 +90,66 @@ class RegistryTests(unittest.TestCase):
         env = self.registry(self.row(width="bad") + self.row())
         self.assertNotEqual(self.run_script("scripts/list-popups.sh", "--tsv", env=env, check=False).returncode, 0)
 
+    def test_target_invalid_source_keys_cannot_hide_behind_overrides(self):
+        self.run_script("tmux-popups.tmux")
+        before = self.generated().read_bytes()
+        keys = self.tmux("list-keys").stdout
+        ownership = self.tmux("show-option", "-g").stdout
+        for key in ["F63", "KPPlus"]:
+            for field in ["direct", "menu"]:
+                for override in [False, True]:
+                    with self.subTest(key=key, field=field, override=override):
+                        text = "# comment\n\n" + self.row(**{field: key})
+                        if override:
+                            text += self.row(title="valid replacement")
+                        env = self.registry(text)
+                        for script, args in [("scripts/list-popups.sh", ["--tsv"]),
+                                             ("scripts/generate-config.sh", [])]:
+                            result = self.run_script(script, *args, env=env, check=False)
+                            self.assertNotEqual(result.returncode, 0)
+                            self.assertIn(str(self.home / "local.tsv") + ":3:", result.stderr)
+                            self.assertIn("fixture", result.stderr)
+                            self.assertIn(field, result.stderr)
+                            self.assertIn(key, result.stderr)
+                            self.assertEqual(result.stdout, "")
+                        self.assertEqual(self.generated().read_bytes(), before)
+                        self.assertEqual(self.tmux("list-keys").stdout, keys)
+                        self.assertEqual(self.tmux("show-option", "-g").stdout, ownership)
+        self.assertEqual(list(self.generated().parent.glob(".generated.*")), [])
+        self.tmux("source-file", "-n", str(self.generated()))
+        self.run_script("scripts/apply-config.sh", str(self.generated()))
+
+    def test_target_alias_collisions_keep_competing_source_locations(self):
+        self.run_script("scripts/generate-config.sh")
+        before = self.generated().read_bytes()
+        keys = self.tmux("list-keys").stdout
+        for field in ["direct", "menu"]:
+            with self.subTest(field=field):
+                second = {"id": "second", "direct": "-", "menu": "s", field: "C-M-x"}
+                env = self.registry("# comment\n\n" + self.row(**{field: "M-C-x"})
+                                    + self.row(**second))
+                for script, args in [("scripts/list-popups.sh", ["--tsv"]),
+                                     ("scripts/generate-config.sh", [])]:
+                    result = self.run_script(script, *args, env=env, check=False)
+                    self.assertNotEqual(result.returncode, 0)
+                    for location in [":3", ":4"]:
+                        self.assertIn(str(self.home / "local.tsv") + location, result.stderr)
+                    for detail in ["fixture", "second", field, "normalization"]:
+                        self.assertIn(detail, result.stderr)
+                    self.assertEqual(result.stdout, "")
+                self.assertEqual(self.generated().read_bytes(), before)
+                self.assertEqual(self.tmux("list-keys").stdout, keys)
+        # A target-normalized collision can also belong to a built-in slot.
+        self.tmux("set-option", "-g", "@tmux-popups-menu-key", "M-C-x")
+        env = self.registry("# comment\n\n" + self.row(direct="C-M-x"))
+        result = self.run_script("scripts/generate-config.sh", env=env, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(str(self.home / "local.tsv") + ":3", result.stderr)
+        self.assertIn("fixture", result.stderr)
+        self.assertIn("built-in quick menu", result.stderr)
+        self.assertEqual(self.generated().read_bytes(), before)
+        self.assertEqual(list(self.generated().parent.glob(".generated.*")), [])
+
     def test_server_validation_failure_keeps_cache_and_binding_ownership(self):
         self.run_script("tmux-popups.tmux")
         before = self.generated().read_bytes()

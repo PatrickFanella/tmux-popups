@@ -398,10 +398,11 @@ All source rows are checked, including rows replaced by an intentional same-ID
 override. Shortcuts are checked on the final merged rows. Duplicate direct or
 menu shortcuts and collisions with the built-in menu, reload, Exit and enabled
 vscode shortcuts fail generation. Direct and menu keys use separate namespaces.
-Generation also checks canonical key slots against the selected tmux server.
+Listing checks every source key against the selected tmux server before merging.
+Target-normalized collisions identify both source rows or the built-in slot.
 
-Generation requires a running target tmux server. It writes an owned temporary
-file beside `generated.conf`, parses it on that server, and validates bindings
+Listing and generation require a running target tmux server. Generation writes
+an owned temporary file beside `generated.conf`, parses it on that server, and validates bindings
 in disposable key tables without changing effective keys or ownership. Only a
 successful validation replaces the cache with an atomic rename. Failure leaves
 the last valid cache intact and removes owned temporary files and tables.
