@@ -59,6 +59,10 @@ class QuotingTests(unittest.TestCase):
         self.assertFalse((self.home / "injected").exists())
 
     def test_quoted_reload_and_configurable_menu_command(self):
+        working = self.home / r"pane with spaces and ' quote\; $(touch pane-injected)"
+        working.mkdir()
+        self.tmux("respawn-pane", "-k", "-c", str(working),
+                  "printf 'fixture-ready\\n'; exec /bin/bash --noprofile --norc")
         config = self.home / "config with ' \" $HOME; quote.conf"
         config.write_text("set-option -g @fixture-reloaded yes\n")
         marker = self.home / "editor marker ' quote"
@@ -81,7 +85,8 @@ class QuotingTests(unittest.TestCase):
         self.wait_until(lambda: b"Quick Menu" in self.terminal_output)
         os.write(client, b"v")
         self.wait_until(marker.exists)
-        self.assertEqual(marker.read_text().strip(), str(self.home))
+        self.assertEqual(marker.read_text().strip(), str(working))
+        self.assertFalse((working / "pane-injected").exists())
 
     def test_tmux_format_data_is_rejected(self):
         registry = self.home / "format.tsv"

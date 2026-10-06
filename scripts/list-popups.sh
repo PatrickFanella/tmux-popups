@@ -76,30 +76,73 @@ deps_status() {
   fi
 }
 
+# Validate every source row, even one replaced by a later same-ID override.
+# Buffer the result so a failure never emits a usable partial registry.
 merged_tsv() {
-  local registries=("$default_registry")
+  local registries=("$default_registry") records source line id direct menu title width height command key slot canonical
+  local -a order=()
+  local -A rows=() locations=() shortcuts=()
   [[ -r "$local_registry" ]] && registries+=("$local_registry")
-
-  awk -F '\t' '
-    BEGIN { OFS = FS }
+  records="$(awk -F '\t' '
     /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
-    NF < 7 { next }
-    $1 == "id" { next }
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand" { next }
     {
-      id = $1
-      row[id] = $0
-      if (!(id in seen)) {
-        order[++count] = id
-        seen[id] = 1
+      if (NF != 7) {
+        printf "%s:%d: expected 7 TSV fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
+        bad = 1; next
       }
-    }
-    END {
-      for (i = 1; i <= count; i++) {
-        id = order[i]
-        if (row[id] != "") print row[id]
+      for (i = 1; i <= 7; i++) if ($i == "") {
+        printf "%s:%d: empty required field %d\n", FILENAME, FNR, i > "/dev/stderr"
+        bad = 1
       }
+      print FILENAME "\t" FNR "\t" $0
     }
-  ' "${registries[@]}"
+    END { if (bad) exit 1 }
+  ' "${registries[@]}")" || return 1
+  while IFS=$'\t' read -r source line id direct menu title width height command; do
+    [[ -n "$source" ]] || continue
+    slot="$source:$line"
+    [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "$slot: unsupported popup id: $id"
+    case "$title" in
+      *'#{'*|*'#('*|*$'\r'*) die "$slot: unsupported tmux format or line break in title" ;;
+    esac
+    for key in "$direct" "$menu"; do
+      valid_key "$key" || die "$slot: invalid key: $key"
+    done
+    for key in "$width" "$height"; do
+      valid_dimension "$key" || die "$slot: invalid dimension: $key"
+    done
+    [[ "$command" == "-" || ( -f "$root/$command" && -x "$root/$command" ) ]] || die "$slot: executable target not found or not executable: $command"
+    [[ -v rows["$id"] ]] || order+=("$id")
+    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"
+    locations["$id"]="$slot"
+  done <<<"$records"
+  local menu_key reload_key enable_vscode
+  menu_key="$(tmux show-option -gqv @tmux-popups-menu-key 2>/dev/null || true)"
+  reload_key="$(tmux show-option -gqv @tmux-popups-reload-key 2>/dev/null || true)"
+  enable_vscode="$(tmux show-option -gqv @tmux-popups-enable-vscode 2>/dev/null || true)"
+  menu_key="${menu_key:-Enter}"; reload_key="${reload_key:-R}"
+  valid_key "$menu_key" && [[ "$menu_key" != "-" ]] || die "invalid menu key: unknown key $menu_key"
+  valid_key "$reload_key" && [[ "$reload_key" != "-" ]] || die "invalid reload key: unknown key $reload_key"
+  canonical_key "$menu_key"
+  shortcuts["direct:$canonical"]='built-in quick menu'
+  canonical_key "$reload_key"
+  slot="direct:$canonical"
+  [[ ! -v shortcuts["$slot"] ]] || die "duplicate direct shortcut: $reload_key conflicts with ${shortcuts[$slot]}"
+  shortcuts["$slot"]='built-in reload'
+  shortcuts[menu:R]='built-in reload'; shortcuts[menu:q]='built-in Exit'
+  [[ "$enable_vscode" == off ]] || shortcuts[menu:v]='built-in vscode'
+  for id in "${order[@]}"; do
+    IFS=$'\t' read -r id direct menu title width height command <<<"${rows[$id]}"
+    for key in direct menu; do
+      [[ "${!key}" == "-" ]] && continue
+      canonical_key "${!key}"
+      slot="$key:$canonical"
+      [[ ! -v shortcuts["$slot"] ]] || die "${locations[$id]}: duplicate $key shortcut ${!key} conflicts with ${shortcuts[$slot]}"
+      shortcuts["$slot"]="${locations[$id]} ($id)"
+    done
+  done
+  for id in "${order[@]}"; do printf '%s\n' "${rows[$id]}"; done
 }
 
 mode="${1:---pretty}"
