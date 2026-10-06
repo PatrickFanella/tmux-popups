@@ -39,11 +39,15 @@ class UserScriptTests(unittest.TestCase):
 
     def test_absolute_argv_cli_and_each_launcher_mode(self):
         path = self.script()
+        # A nonzero status makes tmux completion observable before more input.
+        path.write_text(path.read_text().replace("exec ", "") + "exit 23\n")
         args = ["two words", "it's literal", "", "$(touch injected)", "$HOME", "~", "a\nb\tc", "\\", "#{pane_id}"]
         self.registry(path, args=json.dumps(args))
-        self.run_script("scripts/run-popup.sh", "fixture")
+        result = self.run_script("scripts/run-popup.sh", "fixture", check=False)
+        self.assertEqual(result.returncode, 23)
         self.assertEqual(json.loads(self.marker.read_text()), args)
         client = self.attach()
+        self.tmux("set-option", "-g", "remain-on-exit", "on")
         for mode, completion in [("popup", "foreground"), ("window", "foreground"),
                                  ("command", "foreground"), ("command", "background")]:
             self.registry(path, args=json.dumps(args), mode=mode, completion=completion)
@@ -52,6 +56,7 @@ class UserScriptTests(unittest.TestCase):
                 with self.subTest(mode=mode, completion=completion, source=source):
                     self.marker.unlink(missing_ok=True)
                     self.tmux("select-window", "-t", "fixture:0")
+                    before = self.tmux("list-windows", "-t", "fixture", "-F", "#{window_id}").stdout.splitlines()
                     if source == "direct":
                         os.write(client, b"\x02X")
                     else:
@@ -61,6 +66,18 @@ class UserScriptTests(unittest.TestCase):
                         os.write(client, b"x")
                     self.wait_until(self.marker.exists)
                     self.assertEqual(json.loads(self.marker.read_text()), args)
+                    if mode == "window":
+                        after = self.tmux("list-windows", "-t", "fixture", "-F", "#{window_id}").stdout.splitlines()
+                        created = next(window for window in after if window not in before)
+                        self.wait_until(lambda: self.tmux("display-message", "-p", "-t", created,
+                                                        "#{pane_dead_status}").stdout.strip() == "23")
+                        self.tmux("kill-window", "-t", created)
+                    elif completion == "foreground":
+                        self.wait_until(lambda: self.tmux("display-message", "-p", "-t", "fixture:0",
+                                                        "#{pane_in_mode}").stdout.strip() == "1")
+                        os.write(client, b"q")
+                        self.wait_until(lambda: self.tmux("display-message", "-p", "-t", "fixture:0",
+                                                        "#{pane_in_mode}").stdout.strip() == "0")
         self.assertFalse((self.home / "injected").exists())
         self.assertEqual(list(self.base.rglob("tmux-popups-argv.*")), [])
 
