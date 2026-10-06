@@ -42,7 +42,7 @@ Prefix + $reload_key        reload tmux config (configurable: @tmux-popups-reloa
 
 EOF
 
-  "$root/scripts/list-popups.sh" --deps-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command deps status; do
+  "$root/scripts/list-popups.sh" --deps-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion deps status; do
     [[ "$direct_key" == "-" ]] && continue
     printf 'Prefix + %-7s %-18s %-14s deps:%-22s %s\n' "$direct_key" "$title" "$id" "$deps" "$(status_mark "$status")"
   done
@@ -53,7 +53,7 @@ Quick Menu keys: Prefix + $menu_key, then key
 ----------------------------------------------
 EOF
 
-  "$root/scripts/list-popups.sh" --deps-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command deps status; do
+  "$root/scripts/list-popups.sh" --deps-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion deps status; do
     [[ "$menu_key" == "-" ]] && continue
     printf '%-7s %-18s %-14s deps:%-22s %s\n' "$menu_key" "$title" "$id" "$deps" "$(status_mark "$status")"
   done

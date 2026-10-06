@@ -68,7 +68,7 @@ valid_dimension "$default_width" && [[ "$default_width" != "-" ]] || die "invali
 valid_dimension "$default_height" && [[ "$default_height" != "-" ]] || die "invalid default height: $default_height"
 validate_literal 'vscode command' "$vscode_command"
 rows="$("$root/scripts/list-popups.sh" --tsv)"
-while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
+while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
   validate_literal "title for $id" "$title"
 done <<<"$rows"
@@ -103,14 +103,14 @@ popup_action() {
   printf '# Local source: %s\n\n' "$local_registry"
   printf 'bind-key "%s" source-file "%s" \\; display-message "tmux config reloaded"\n\n' "$(q "$reload_key")" "$(q "$config_file")"
 
-  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
+  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
     [[ "$direct_key" == "-" ]] && continue
     printf 'bind-key "%s" %s\n' "$(q "$direct_key")" "$(popup_action "$id")"
   done
 
   printf '\nbind-key "%s" display-menu -T "#[align=centre] Quick Menu " -x C -y C' "$(q "$menu_key")"
-  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
+  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
     [[ "$row_menu_key" == "-" ]] && continue
     action="$(popup_action "$id" on)"
@@ -149,7 +149,7 @@ expected=2
     printf 'bind-key -T "%s" "v" display-message vscode\n' "$table-menu"
     ((expected+=1))
   fi
-  while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
+  while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
     [[ -n "$id" && "$row_menu_key" != "-" ]] || continue
     printf 'bind-key -T "%s" "%s" display-message "%s"\n' "$table-menu" "$(q "$row_menu_key")" "$id"
     ((expected+=1))

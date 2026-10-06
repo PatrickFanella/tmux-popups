@@ -31,7 +31,16 @@ row="$(
 )" || row=""
 
 if [[ -n "$row" ]]; then
-  IFS=$'\t' read -r _popup_id _direct_key _menu_key _title _width _height command <<<"$row"
+  IFS=$'\t' read -r _popup_id _direct_key _menu_key _title _width _height command mode completion <<<"$row"
+
+  if [[ "$mode" == command ]]; then
+    if [[ "$completion" == background ]]; then
+      # No terminal input/output and no completion status after launch.
+      "$root/$command" </dev/null >/dev/null 2>&1 &
+      exit 0
+    fi
+    exec "$root/$command"
+  fi
 
   if [[ "${2:-}" == --launch ]]; then
     launch_environment=()
@@ -44,12 +53,13 @@ if [[ -n "$row" ]]; then
     launch_command="'$executable/scripts/run-popup.sh' $id"
     # tmux treats -c/-d as formats, so protect literal hashes in path data.
     launch_directory=${TMUX_POPUPS_DIRECTORY//#/##}
-    mode="$(tmux show-option -gqv @tmux-popups-yazi-mode)"
-    case "$id:$mode" in
-      yazi:window|home:window|projects:window|downloads:window|yazi:|home:|projects:|downloads:)
+    case "$mode" in
+      window)
         exec tmux new-window -t "$TMUX_POPUPS_SESSION:" -c "$launch_directory" \
           "${launch_environment[@]}" -n "$_title" "$launch_command" ;;
-      yazi:popup|home:popup|projects:popup|downloads:popup)
+    esac
+    case "$command" in
+      scripts/tools/yazi.sh|scripts/tools/home.sh|scripts/tools/projects.sh|scripts/tools/downloads.sh)
         tmux display-message -c "$TMUX_POPUPS_CLIENT" 'tmux-popups: warning: yazi popup mode may trigger terminal response timeout' ;;
     esac
     [[ "$_width" == - ]] && _width="$(tmux show-option -gqv @tmux-popups-default-width)"

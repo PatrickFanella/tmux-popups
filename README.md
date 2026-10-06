@@ -133,7 +133,7 @@ Use `-` in a row's width or height to inherit the default width/height options.
 Rows are tab-separated:
 
 ```tsv
-id	direct_key	menu_key	title	width	height	command
+id	direct_key	menu_key	title	width	height	command	mode	completion
 ```
 
 | Column | Meaning |
@@ -144,9 +144,44 @@ id	direct_key	menu_key	title	width	height	command
 | `title` | Popup title |
 | `width` | tmux popup width, e.g. `80%`, or `-` for default |
 | `height` | tmux popup height, e.g. `80%`, or `-` for default |
-| `command` | Plugin-relative script path, or `-` for an interactive shell |
+| `command` | Plugin-relative executable path, or `-` for an interactive shell |
+| `mode` | Optional `popup`, `window`, `command`, or `-` for compatibility defaults |
+| `completion` | Optional `foreground`, `background`, or `-` for foreground |
 
-Blank lines and lines beginning with `#` are ignored.
+Blank lines and lines beginning with `#` are ignored. Seven-column rows remain
+valid. Eight-column rows add mode; nine-column rows add completion. Supplied
+fields must be nonempty, so use `-` for a default. `--tsv` emits nine columns
+with resolved mode and completion; `--deps-tsv` appends dependencies and status.
+
+Legacy rows and rows with mode `-` default to popup. The four shipped adapters
+`yazi.sh`, `home.sh`, `projects.sh` and `downloads.sh` under `scripts/tools/` default
+to window and honor `@tmux-popups-yazi-mode`, which accepts popup or window.
+This compatibility rule follows the executable path, including renamed entries.
+A legacy local override pointing at another adapter defaults to popup. Add an
+explicit mode to keep a different launch policy. Explicit modes take precedence
+over the legacy option, even for Yazi adapters. Entry IDs never choose a mode.
+
+Popup uses the row dimensions, inherits configured dimensions for `-`, and
+closes when the adapter exits through `display-popup -E`. Window creates a
+window in the origin session, uses the session's dimensions and normal tmux
+`remain-on-exit` behavior. Width and height remain validated in every mode but
+only affect popup. Both run the adapter in the invoking directory.
+
+Command runs the executable directly without a popup or window, in the invoking
+directory with the same origin variables. Foreground is the default. The tmux
+`run-shell` action waits for completion and displays output through tmux; it does
+not provide an interactive terminal. A nonzero exit produces tmux's normal run-shell diagnostic view, dismissed with
+`q`. A CLI call returns the adapter's exit code.
+Background starts the adapter with stdin, stdout and stderr connected to
+`/dev/null`, then returns success after starting it. It neither waits nor reports
+the later exit status. The adapter owns any durable output it needs. Background
+is valid only for command mode; command mode requires an executable, not `-`.
+No shell expression or arguments are evaluated from the command column.
+
+Choose an adapter that does not require terminal input for command entries.
+`run-popup.sh <id>` executes adapters directly for CLI callers. `--launch` is the
+binding/menu entrypoint that creates popup or window presentation. Command
+completion policy applies to both entrypoints.
 
 ## Local override registry
 
@@ -321,7 +356,7 @@ set -g @tmux-popups-yazi-mode 'popup'
 ```
 
 Warning: popup mode may trigger Yazi terminal response timeouts; tmux-popups
-shows a warning before launching Yazi in popup mode.
+shows a warning before launching a Yazi adapter in popup mode.
 
 ## How it works
 
@@ -334,7 +369,7 @@ popups.tsv + optional local registry
   -> reconciled tmux prefix bindings
 ```
 
-`scripts/run-popup.sh <id>` reads the merged registry and executes the matching command inside `display-popup`.
+`scripts/run-popup.sh <id>` reads the merged registry and executes the matching adapter. Bindings and menu actions use `--launch` to apply its presentation mode.
 
 ## Files
 
@@ -384,7 +419,7 @@ ownership state if applying the transition fails.
 
 ### Registry validation and cache publication
 
-Every non-comment registry row must have exactly seven nonempty TSV fields.
+Every non-comment registry row must have seven, eight or nine nonempty TSV fields.
 IDs accept letters, digits, underscores and hyphens. Keys accept a single
 printable character or a named tmux key with C-, M- or S- modifiers. Use `-`
 to disable a shortcut. Dimensions accept cell counts from 1 through 2147483647, 1% through
@@ -432,4 +467,4 @@ Exiting an adapter still exits normally. `run-popup.sh <id>` also accepts the
 contract through its environment. Without it, the CLI uses `TMUX_PANE` for pane,
 session and window IDs and `$PWD` for the directory, leaving the client unset.
 Client actions then cancel. Calls outside tmux can still run ordinary adapters.
-This contract applies to the currently supported popup and window launch modes.
+This contract applies to popup, window and command launch modes.

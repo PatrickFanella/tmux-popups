@@ -2,7 +2,7 @@
 
 Run `scripts/check.sh` from the repository checkout. It runs Bash syntax,
 ShellCheck with the existing project exclusions, and `tests/run.sh`. The test
-command requires Python 3, tmux and GNU timeout. It has a 90-second bound.
+command requires Python 3, tmux and GNU timeout. It has a 240-second bound.
 
 Each test starts a separate tmux server on a private socket, creates a disposable
 home and XDG directories, and removes its clients and server before deleting
@@ -61,3 +61,13 @@ a failed writer cannot replace another writer's valid cache. Tests use only
 owned HOME/XDG files and private tmux sockets. The editor regression checks a
 pane directory containing spaces, apostrophes, a backslash-semicolon and shell
 expressions on tmux 3.3a and newer.
+
+Mode checks load seven-column legacy rows and eight/nine-column extensions,
+then dispatch popup, window and foreground/background command entries through
+bindings and menu selections. They check popup dimensions, session-sized windows,
+exit 23 handling, CLI status propagation, background return before completion,
+local overrides and the legacy Yazi adapter-path defaults. Command fixtures
+also preserve literal newline/tab directories and the origin contract on two
+clients. Invalid extensions preserve the last-good config and bindings.
+The longer suite deadline accommodates these added PTY cases; each operation
+and completion wait retains its own shorter bound.
