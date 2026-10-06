@@ -34,7 +34,7 @@ class RegistryTests(unittest.TestCase):
         keys = self.tmux("list-keys").stdout
         cases = [
             ("fixture\tX\tx\ttitle\t70%\t70%\n", "7 TSV fields"),
-            (self.row().rstrip() + "\textra\n", "7 TSV fields"),
+            (self.row().rstrip() + "\textra\n", "invalid launch mode"),
             (self.row(id="bad;touch injected"), "unsupported popup id"),
             *[(self.row(**{field: ""}), "empty required field")
               for field in ["id", "direct", "menu", "title", "width", "height", "command"]],

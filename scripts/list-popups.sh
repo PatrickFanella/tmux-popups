@@ -79,23 +79,25 @@ deps_status() {
 # Validate every source row, even one replaced by a later same-ID override.
 # Buffer the result so a failure never emits a usable partial registry.
 merged_tsv() (
-  local registries=("$default_registry") records source line id direct menu title width height command key slot canonical
+  local registries=("$default_registry") records source line id direct menu title width height command launch_mode completion key slot canonical
   local -a order=()
   local -A rows=() locations=() shortcuts=() target_keys=()
   [[ -r "$local_registry" ]] && registries+=("$local_registry")
   records="$(awk -F '\t' '
     /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
-    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand" { next }
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand" ||
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode" ||
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion" { next }
     {
-      if (NF != 7) {
-        printf "%s:%d: expected 7 TSV fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
+      if (NF < 7 || NF > 9) {
+        printf "%s:%d: expected 7 TSV fields or 8/9 extended fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
         bad = 1; next
       }
-      for (i = 1; i <= 7; i++) if ($i == "") {
+      for (i = 1; i <= NF; i++) if ($i == "") {
         printf "%s:%d: empty required field %d\n", FILENAME, FNR, i > "/dev/stderr"
         bad = 1
       }
-      print FILENAME "\t" FNR "\t" $0
+      print FILENAME "\t" FNR "\t" $0 (NF == 7 ? "\t-\tforeground" : NF == 8 ? "\tforeground" : "")
     }
     END { if (bad) exit 1 }
   ' "${registries[@]}")" || return 1
@@ -129,7 +131,7 @@ merged_tsv() (
     printf 'bind-key -T "%s" "%s" display-message probe%d\nlist-keys -T "%s"\n' \
       "$table" "$quoted" "${#inputs[@]}" "$table" >>"$probe"
   }
-  while IFS=$'\t' read -r source line id direct menu title width height command; do
+  while IFS=$'\t' read -r source line id direct menu title width height command launch_mode completion; do
     [[ -n "$source" ]] || continue
     slot="$source:$line"
     [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "$slot: unsupported popup id: $id"
@@ -144,8 +146,30 @@ merged_tsv() (
       valid_dimension "$key" || die "$slot: invalid dimension: $key"
     done
     [[ "$command" == "-" || ( -f "$root/$command" && -x "$root/$command" ) ]] || die "$slot: executable target not found or not executable: $command"
+    if [[ "$launch_mode" == "-" ]]; then
+      # Compatibility follows the adapter path, never an entry ID. Explicit
+      # modes bypass this legacy option, including on same-ID local overrides.
+      case "$command" in
+        scripts/tools/yazi.sh|scripts/tools/home.sh|scripts/tools/projects.sh|scripts/tools/downloads.sh)
+          launch_mode="$(tmux show-option -gqv @tmux-popups-yazi-mode)"
+          launch_mode="${launch_mode:-window}"
+          [[ "$launch_mode" == popup || "$launch_mode" == window ]] || die "$slot: invalid legacy Yazi mode: $launch_mode" ;;
+        *) launch_mode=popup ;;
+      esac
+    fi
+    case "$launch_mode" in
+      popup|window|command) ;;
+      *) die "$slot: invalid launch mode: $launch_mode" ;;
+    esac
+    [[ "$completion" == "-" ]] && completion=foreground
+    case "$completion" in
+      foreground) ;;
+      background) [[ "$launch_mode" == command ]] || die "$slot: background completion requires command mode" ;;
+      *) die "$slot: invalid completion: $completion" ;;
+    esac
+    [[ "$launch_mode:$command" != command:- ]] || die "$slot: command mode requires an executable target"
     [[ -v rows["$id"] ]] || order+=("$id")
-    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"
+    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"$'\t'"$launch_mode"$'\t'"$completion"
     locations["$id"]="$slot"
   done <<<"$records"
   local menu_key reload_key enable_vscode
@@ -190,7 +214,7 @@ merged_tsv() (
     target_key v; shortcuts["menu:$canonical"]='built-in vscode'
   fi
   for id in "${order[@]}"; do
-    IFS=$'\t' read -r id direct menu title width height command <<<"${rows[$id]}"
+    IFS=$'\t' read -r id direct menu title width height command launch_mode completion <<<"${rows[$id]}"
     for key in direct menu; do
       [[ "${!key}" == "-" ]] && continue
       target_key "${!key}"
@@ -207,17 +231,17 @@ case "$mode" in
   --help|-h) usage ;;
   --tsv) merged_tsv ;;
   --pretty)
-    printf '%-14s %-9s %-7s %-18s %-9s %-9s %s\n' id direct menu title width height command
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command; do
-      printf '%-14s %-9s %-7s %-18s %-9s %-9s %s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command"
+    printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' id direct menu title width height mode completion command
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion; do
+      printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$launch_mode" "$completion" "$command"
     done
     ;;
   --deps|--deps-tsv)
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command; do
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion; do
       deps="$(deps_for_id "$id")"
       status="$(deps_status "$deps")"
       if [[ "$mode" == "--deps-tsv" ]]; then
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$deps" "$status"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$deps" "$status"
       else
         printf '%-14s %-18s %-24s %s\n' "$id" "$title" "$deps" "$status"
       fi
