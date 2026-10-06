@@ -34,7 +34,6 @@ default_width="$(tmux_option @tmux-popups-default-width 80%)"
 default_height="$(tmux_option @tmux-popups-default-height 80%)"
 vscode_command="$(tmux_option @tmux-popups-vscode-command 'code .')"
 enable_vscode="$(tmux_option @tmux-popups-enable-vscode on)"
-yazi_mode="$(tmux_option @tmux-popups-yazi-mode window)"
 local_registry="$(resolve_local_registry)"
 config_file="$(tmux_option @tmux-popups-config-file "$HOME/.tmux.conf")"
 config_file="$(expand_home_path "$config_file")"
@@ -74,33 +73,17 @@ while IFS=$'\t' read -r id direct_key row_menu_key title width height command; d
   validate_literal "title for $id" "$title"
 done <<<"$rows"
 
-is_yazi_id() {
-  case "$1" in
-    yazi|home|projects|downloads) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
 popup_action() {
-  local id="$1" title="$2" width="$3" height="$4" command="$5" separator="${6:-\;}"
-  [[ "$width" == "-" ]] && width="$default_width"
-  [[ "$height" == "-" ]] && height="$default_height"
+  local id="$1" menu="${2:-off}" cmd prefix="#" field
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
-  local cmd
-  cmd="$(shell_quote "$root/scripts/run-popup.sh") $id"
-
-  if [[ "$yazi_mode" == "window" ]] && is_yazi_id "$id"; then
-    printf 'new-window -c "#{pane_current_path}" -n "%s" "%s"' \
-      "$(q "$title")" "$(q "$cmd")"
-    return
-  fi
-
-  if [[ "$yazi_mode" == "popup" ]] && is_yazi_id "$id"; then
-    printf 'display-message "tmux-popups: warning: yazi popup mode may trigger terminal response timeout" %s ' "$separator"
-  fi
-
-  printf 'display-popup -T " %s " -d "#{pane_current_path}" -w "%s" -h "%s" -E "%s"' \
-    "$(q "$title")" "$(q "$width")" "$(q "$height")" "$(q "$cmd")"
+  # Menu parses its action once before run-shell expands formats. Defer the
+  # snapshot so literal directory bytes never become shell source.
+  [[ "$menu" == on ]] && prefix="##"
+  cmd="$(shell_quote "$root/scripts/run-popup.sh") $id --launch"
+  for field in client_name session_id window_id pane_id pane_current_path; do
+    cmd+=" ${prefix}{q:${field}}"
+  done
+  printf 'run-shell "%s"' "$(q "$cmd")"
 }
 
 {
@@ -112,14 +95,14 @@ popup_action() {
   printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
     [[ "$direct_key" == "-" ]] && continue
-    printf 'bind-key "%s" %s\n' "$(q "$direct_key")" "$(popup_action "$id" "$title" "$width" "$height" "$command")"
+    printf 'bind-key "%s" %s\n' "$(q "$direct_key")" "$(popup_action "$id")"
   done
 
   printf '\nbind-key "%s" display-menu -T "#[align=centre] Quick Menu " -x C -y C' "$(q "$menu_key")"
   printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
     [[ "$row_menu_key" == "-" ]] && continue
-    action="$(popup_action "$id" "$title" "$width" "$height" "$command" ';')"
+    action="$(popup_action "$id" on)"
     printf ' "%s" "%s" "%s"' "$(q "$title")" "$(q "$row_menu_key")" "$(q "$action")"
   done
 

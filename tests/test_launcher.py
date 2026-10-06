@@ -83,23 +83,27 @@ class LauncherTests(unittest.TestCase):
     def load(self):
         self.run_script("tmux-popups.tmux")
 
-    def attach(self):
+    def attach(self, session="fixture"):
         master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 100, 0, 0))
         process = subprocess.Popen(
-            [REAL_TMUX, "-S", str(self.socket), "attach-session", "-t", "fixture"],
+            [REAL_TMUX, "-S", str(self.socket), "attach-session", "-t", session],
             stdin=slave, stdout=slave, stderr=slave, env=self.env,
         )
         os.close(slave)
         stopped = threading.Event()
-        self.terminal_output = bytearray()
+        terminal_output = bytearray()
+        self.terminal_output = terminal_output
+        if not hasattr(self, "client_output"):
+            self.client_output = {}
+        self.client_output[master] = terminal_output
 
         def drain():
             while not stopped.is_set():
                 try:
                     if select.select([master], [], [], 0.05)[0]:
                         chunk = os.read(master, 65536)
-                        self.terminal_output.extend(chunk)
+                        terminal_output.extend(chunk)
                         if not chunk:
                             break
                 except OSError:
@@ -122,7 +126,7 @@ class LauncherTests(unittest.TestCase):
 
         self.owned_cleanup(cleanup)
         self.wait_until(lambda: bool(self.tmux("list-clients", "-F", "#{client_name}").stdout.strip()))
-        self.wait_until(lambda: b"fixture-ready" in self.terminal_output)
+        self.wait_until(lambda: b"fixture-ready" in terminal_output)
         return master
 
     def wait_until(self, predicate):

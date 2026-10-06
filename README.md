@@ -413,3 +413,23 @@ server-serialized transaction described above.
 
 The configurable vscode menu command runs through `run-shell` with a shell-quoted
 pane directory, including on tmux 3.3a. It retains shell command semantics.
+
+### Invoking context
+
+Direct bindings and menu actions capture the invoking context when tmux dispatches
+an entry. Both popup and window launches export `TMUX_POPUPS_CLIENT`,
+`TMUX_POPUPS_SESSION`, `TMUX_POPUPS_WINDOW`, `TMUX_POPUPS_PANE` and
+`TMUX_POPUPS_DIRECTORY`. The IDs refer to the origin, even when an adapter runs
+in a newly created window. The directory remains literal data, including spaces
+and shell expressions. Popup launches target the origin client and pane; new
+windows target the origin session explicitly.
+
+Local scripts may read these variables or source `scripts/lib.sh` and call
+`close_origin_popup`. The optional sessions adapter targets the origin pane and
+switches only the invoking client. If an origin vanishes, these helpers report
+an error and cancel the action. They never fall back to an unrelated client.
+Exiting an adapter still exits normally. `run-popup.sh <id>` also accepts the
+contract through its environment. Without it, the CLI uses `TMUX_PANE` for pane,
+session and window IDs and `$PWD` for the directory, leaving the client unset.
+Client actions then cancel. Calls outside tmux can still run ordinary adapters.
+This contract applies to the currently supported popup and window launch modes.
