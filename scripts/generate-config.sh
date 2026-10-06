@@ -73,6 +73,16 @@ while IFS=$'\t' read -r id direct_key row_menu_key title width height command; d
   validate_literal "title for $id" "$title"
 done <<<"$rows"
 
+# Build a POSIX shell word at dispatch, after tmux has parsed the command.
+# tmux q leaves tabs/newlines unquoted. Single quotes protect every path byte;
+# s replaces each apostrophe with a close quote, quoted apostrophe, open quote.
+# The substitution result is data, with no second format expansion or shell
+# command substitution that could interpret hashes or strip trailing newlines.
+shell_directory_format() {
+  local prefix="$1" apostrophe="'\"'\"'"
+  printf "'%s{s|'|%s|:pane_current_path}'" "$prefix" "$apostrophe"
+}
+
 popup_action() {
   local id="$1" menu="${2:-off}" cmd prefix="#" field
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
@@ -80,9 +90,10 @@ popup_action() {
   # snapshot so literal directory bytes never become shell source.
   [[ "$menu" == on ]] && prefix="##"
   cmd="$(shell_quote "$root/scripts/run-popup.sh") $id --launch"
-  for field in client_name session_id window_id pane_id pane_current_path; do
+  for field in client_name session_id window_id pane_id; do
     cmd+=" ${prefix}{q:${field}}"
   done
+  cmd+=" $(shell_directory_format "$prefix")"
   printf 'run-shell "%s"' "$(q "$cmd")"
 }
 
@@ -108,8 +119,8 @@ popup_action() {
 
   if [[ "$enable_vscode" != "off" ]]; then
     # Defer the directory format past display-menu parsing. run-shell then
-    # expands shell quoting once, preserving literal pane directory bytes.
-    vscode_action="run-shell \"cd -- ##{q:pane_current_path} && $(q "$vscode_command")\""
+    # expands the single-quoted directory word once.
+    vscode_action="run-shell \"cd -- $(q "$(shell_directory_format "##")") && $(q "$vscode_command")\""
     printf ' "vscode here" v "%s"' "$(q "$vscode_action")"
   fi
   reload_action="source-file \"$(q "$config_file")\"; display-message \"tmux config reloaded\""
