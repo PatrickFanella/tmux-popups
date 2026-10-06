@@ -29,3 +29,10 @@ home, spaces, absolute/relative paths and unevaluated shell expressions.
 Registry-selection regressions also cover fresh dispatch after generation,
 command overrides, environment precedence, help output and explicit missing-file
 failures. These cases failed before the shared selection helper was added.
+
+Timer checks use controlled sleep programs to verify decimal input, the empty
+25-minute default, the supported 1 to 1440-minute range, zero/invalid/overflow
+rejection, exactly 60 sleeps for a one-minute timer, and owned-child cleanup.
+An attached tmux popup accepts 09 and Ctrl-C cancels its owned sleep. This
+pseudoterminal evidence does not qualify actual terminal applications for #12
+or #24.
