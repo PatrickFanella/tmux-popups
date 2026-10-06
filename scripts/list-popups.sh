@@ -104,14 +104,20 @@ merged_tsv() (
   # Retain every source key, even if a later row replaces its popup ID.
   # Each probe prints the target's canonical identity before an alias can
   # replace that binding. One source-file call validates the complete batch.
-  local probe table input marker binding error validated
+  local probe table input marker binding error validated key_socket_directory=''
+  local -a key_tmux=(tmux)
   local -a inputs=()
   local -A key_locations=() identities=()
   probe="$(mktemp "${TMPDIR:-/tmp}/tmux-popups-keys.XXXXXXXX")"
   table="tmux-popups-keys-${probe##*/}"
   # shellcheck disable=SC2329 # Invoked by the EXIT trap in this subshell.
   cleanup_keys() {
-    tmux unbind-key -a -T "$table" 2>/dev/null || true
+    "${key_tmux[@]}" unbind-key -a -T "$table" 2>/dev/null || true
+    if [[ -n "$key_socket_directory" ]]; then
+      "${key_tmux[@]}" kill-server 2>/dev/null || true
+      rm -f -- "$key_socket_directory/socket"
+      rmdir -- "$key_socket_directory" 2>/dev/null || true
+    fi
     rm -f -- "$probe" "$probe.error"
   }
   trap cleanup_keys EXIT
@@ -151,7 +157,7 @@ merged_tsv() (
       # modes bypass this legacy option, including on same-ID local overrides.
       case "$command" in
         scripts/tools/yazi.sh|scripts/tools/home.sh|scripts/tools/projects.sh|scripts/tools/downloads.sh)
-          launch_mode="$(tmux show-option -gqv @tmux-popups-yazi-mode)"
+          launch_mode="$(tmux show-option -gqv @tmux-popups-yazi-mode 2>/dev/null || true)"
           launch_mode="${launch_mode:-window}"
           [[ "$launch_mode" == popup || "$launch_mode" == window ]] || die "$slot: invalid legacy Yazi mode: $launch_mode" ;;
         *) launch_mode=popup ;;
@@ -184,8 +190,15 @@ merged_tsv() (
   queue_key R 'built-in menu reload'
   queue_key q 'built-in Exit'
   [[ "$enable_vscode" == off ]] || queue_key v 'built-in vscode'
+  # CLI callers without a running server still need validation by this tmux
+  # version. Use a private, short-lived server solely for the key probes.
+  if ! tmux list-sessions >/dev/null 2>&1; then
+    key_socket_directory="$(mktemp -d "${TMPDIR:-/tmp}/tmux-popups-cli.XXXXXXXX")"
+    key_tmux=(tmux -S "$key_socket_directory/socket")
+    "${key_tmux[@]}" -f /dev/null new-session -d -s registry-key-probe 'sleep 30'
+  fi
   validated=yes
-  binding="$(tmux source-file "$probe" 2>"$probe.error")" || validated=no
+  binding="$("${key_tmux[@]}" source-file "$probe" 2>"$probe.error")" || validated=no
   # Canonical key names occupy the fourth whitespace field, including Space
   # for a literal space. Unique probe markers retain each alias's identity.
   while IFS=$'\t' read -r marker canonical; do
