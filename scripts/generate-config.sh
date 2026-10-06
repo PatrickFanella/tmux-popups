@@ -65,7 +65,7 @@ is_yazi_id() {
 }
 
 popup_action() {
-  local id="$1" title="$2" width="$3" height="$4" command="$5"
+  local id="$1" title="$2" width="$3" height="$4" command="$5" separator="${6:-\;}"
   [[ "$width" == "-" ]] && width="$default_width"
   [[ "$height" == "-" ]] && height="$default_height"
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
@@ -79,7 +79,7 @@ popup_action() {
   fi
 
   if [[ "$yazi_mode" == "popup" ]] && is_yazi_id "$id"; then
-    printf 'display-message "tmux-popups: warning: yazi popup mode may trigger terminal response timeout" \\; '
+    printf 'display-message "tmux-popups: warning: yazi popup mode may trigger terminal response timeout" %s ' "$separator"
   fi
 
   printf 'display-popup -T " %s " -d "#{pane_current_path}" -w "%s" -h "%s" -E "%s"' \
@@ -102,8 +102,7 @@ popup_action() {
   printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
     [[ "$row_menu_key" == "-" ]] && continue
-    action="$(popup_action "$id" "$title" "$width" "$height" "$command")"
-    action=${action//\\;/;}
+    action="$(popup_action "$id" "$title" "$width" "$height" "$command" ';')"
     printf ' "%s" "%s" "%s"' "$(q "$title")" "$(q "$row_menu_key")" "$(q "$action")"
   done
 

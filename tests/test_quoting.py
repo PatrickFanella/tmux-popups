@@ -6,20 +6,22 @@ import shlex
 import shutil
 import subprocess
 import unittest
-from test_launcher import LauncherTests
+import test_launcher as launcher
 
 
 class QuotingTests(unittest.TestCase):
-    owned_cleanup = LauncherTests.owned_cleanup
-    stub = LauncherTests.stub
-    tmux = LauncherTests.tmux
-    generated = LauncherTests.generated
-    load = LauncherTests.load
-    attach = LauncherTests.attach
-    wait_until = LauncherTests.wait_until
+    owned_cleanup = launcher.LauncherTests.owned_cleanup
+    stub = launcher.LauncherTests.stub
+    tmux = launcher.LauncherTests.tmux
+    generated = launcher.LauncherTests.generated
+    load = launcher.LauncherTests.load
+    attach = launcher.LauncherTests.attach
+    wait_until = launcher.LauncherTests.wait_until
     def setUp(self):
-        LauncherTests.setUp(self)
-        self.checkout = self.base / "plugin with spaces and ' apostrophe; $(touch injected)"
+        launcher.LauncherTests.setUp(self)
+        self.tmux("respawn-pane", "-k", "-c", str(self.home),
+                  "printf 'fixture-ready\\n'; exec /bin/bash --noprofile --norc")
+        self.checkout = self.base / r"plugin with spaces and ' apostrophe\; $(touch injected)"
         shutil.copytree(Path(__file__).resolve().parents[1], self.checkout, ignore=shutil.ignore_patterns(".git", "__pycache__"))
 
     def run_script(self, name, *args, input=None, check=True, env=None):
@@ -32,7 +34,7 @@ class QuotingTests(unittest.TestCase):
         tool = self.checkout / "scripts/tools/fixture with ' quote; $.sh"
         tool.write_text("#!/bin/bash\nprintf called > " + shlex.quote(str(marker)) + "\n")
         tool.chmod(0o755)
-        registry = self.home / "local.tsv"
+        registry = self.home / "local with spaces and ' apostrophe; $.tsv"
         registry.write_text("yazi\tY\tr\tquote ' \" $HOME; $(touch injected)\t70%\t70%\t" + str(tool.relative_to(self.checkout)) + "\n")
         self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(registry))
         return marker
@@ -60,7 +62,7 @@ class QuotingTests(unittest.TestCase):
         config = self.home / "config with ' \" $HOME; quote.conf"
         config.write_text("set-option -g @fixture-reloaded yes\n")
         marker = self.home / "editor marker ' quote"
-        command = "printf '%s' 'editor called' > " + shlex.quote(str(marker))
+        command = "pwd > " + shlex.quote(str(marker))
         self.tmux("set-option", "-g", "@tmux-popups-config-file", str(config))
         self.tmux("set-option", "-g", "@tmux-popups-enable-vscode", "on")
         self.tmux("set-option", "-g", "@tmux-popups-vscode-command", command)
@@ -79,7 +81,7 @@ class QuotingTests(unittest.TestCase):
         self.wait_until(lambda: b"Quick Menu" in self.terminal_output)
         os.write(client, b"v")
         self.wait_until(marker.exists)
-        self.assertEqual(marker.read_text(), "editor called")
+        self.assertEqual(marker.read_text().strip(), str(self.home))
 
     def test_tmux_format_data_is_rejected(self):
         registry = self.home / "format.tsv"

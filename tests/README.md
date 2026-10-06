@@ -30,4 +30,17 @@ Registry-selection regressions also cover fresh dispatch after generation,
 command overrides, environment precedence, help output and explicit missing-file
 failures. These cases failed before the shared selection helper was added.
 
-Quoting checks execute direct and menu actions in windows and attached popups from a checkout with spaces, apostrophes and shell metacharacters. They also exercise reload paths and the configurable editor command. Unsupported entry IDs and tmux format expressions or line breaks in plugin/config/registry paths and titles fail before generation. Attached clients use synthetic PTYs and do not qualify actual terminals for #12 or #24.
+Quoting checks execute direct and menu actions in windows and attached popups from a checkout with spaces, apostrophes and shell metacharacters, including a literal backslash before a semicolon. They also exercise reload paths and the configurable editor command. Unsupported entry IDs and tmux format expressions or line breaks in plugin/config/registry paths and titles fail before generation. Attached clients use synthetic PTYs and do not qualify actual terminals for #12 or #24.
+
+Timer checks use controlled sleep programs to verify decimal input, the empty
+25-minute default, the supported 1 to 1440-minute range, zero/invalid/overflow
+rejection, exactly 60 sleeps for a one-minute timer, and owned-child cleanup.
+An attached tmux popup accepts 09 and Ctrl-C cancels its owned sleep. This
+pseudoterminal evidence does not qualify actual terminal applications for #12
+or #24.
+
+Clipboard checks use empty, small and 100,000-row histories, producer failures,
+picker cancellation/failure and failed decoding. A clipboard substitute checks
+exact selected bytes, including NUL, non-UTF-8 bytes and trailing newlines,
+without touching the system clipboard. Owned temporary files are checked after
+each run. Real cliphist/Wayland checks remain separate environment evidence.
