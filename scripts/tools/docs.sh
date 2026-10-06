@@ -8,7 +8,7 @@ read -r cmd
 tmp="${TMPDIR:-/tmp}/tmux-docs-popup.$$"
 trap 'rm -f "$tmp"' EXIT
 if command -v tldr >/dev/null 2>&1 && tldr "$cmd" >"$tmp" 2>/dev/null; then
-  less -R "$tmp"
+  if command -v less >/dev/null 2>&1; then less -R "$tmp"; else cat "$tmp"; fi
 elif man "$cmd" >/dev/null 2>&1; then
   man "$cmd"
 else

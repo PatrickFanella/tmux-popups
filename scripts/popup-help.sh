@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$root/scripts/lib.sh"
 local_registry="$(resolve_local_registry)"
+policy="$(availability_policy)"
 
 tmux_opt() {
   tmux show-option -gqv "$1" 2>/dev/null || true
@@ -42,8 +43,9 @@ Prefix + $reload_key        reload tmux config (configurable: @tmux-popups-reloa
 
 EOF
 
-  "$root/scripts/list-popups.sh" --deps-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion deps status; do
-    [[ "$direct_key" == "-" ]] && continue
+  "$root/scripts/list-popups.sh" --state-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps status; do
+    [[ "$direct_key" == "-" || "$enabled" == off ]] && continue
+    [[ "$status" == ok || "$policy" == ignore ]] || continue
     printf 'Prefix + %-7s %-18s %-14s deps:%-22s %s\n' "$direct_key" "$title" "$id" "$deps" "$(status_mark "$status")"
   done
 
@@ -53,8 +55,12 @@ Quick Menu keys: Prefix + $menu_key, then key
 ----------------------------------------------
 EOF
 
-  "$root/scripts/list-popups.sh" --deps-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion deps status; do
-    [[ "$menu_key" == "-" ]] && continue
+  "$root/scripts/list-popups.sh" --state-tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps status; do
+    [[ "$menu_key" == "-" || "$enabled" == off ]] && continue
+    if [[ "$status" != ok && "$policy" != ignore ]]; then
+      [[ "$policy" != hide-unavailable ]] || continue
+      menu_key="-"
+    fi
     printf '%-7s %-18s %-14s deps:%-22s %s\n' "$menu_key" "$title" "$id" "$deps" "$(status_mark "$status")"
   done
 
@@ -62,6 +68,11 @@ EOF
 v       vscode here        configurable: @tmux-popups-vscode-command
 R       reload tmux        source $config_file
 q       exit menu
+
+Optional adapters and disabled rows
+-----------------------------------
+$("$root/scripts/list-popups.sh" --deps)
+Enable an adapter with @tmux-popups-<id>-enabled on, then reload.
 
 Helpers
 -------

@@ -20,7 +20,7 @@ while true; do
   case "$action" in
     w|weather) curl -fsSL 'https://wttr.in/?0' | less -R ;;
     n|news) ensure_newsboat_urls; require_cmd newsboat; newsboat || pause ;;
-    e|edit) ensure_newsboat_urls; "${EDITOR:-nvim}" "$HOME/.newsboat/urls" ;;
+    e|edit) ensure_newsboat_urls; "$(editor_command)" "$HOME/.newsboat/urls" ;;
     q|quit|/quit|exit|/exit) exit 0 ;;
   esac
 done

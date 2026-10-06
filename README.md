@@ -63,22 +63,43 @@ TPM will see `tmux-popups`; the symlink points it at your working tree.
 
 ## Default bindings
 
-The default registry includes the full popup set. Some rows need optional tools; dependency status is visible in `Prefix+C-h` and `scripts/list-popups.sh --deps`.
+The small default enables help, shell, daily notes, timer and tmux keys. Optional
+adapters remain in the registry and appear with their enabled/dependency status
+in help and `scripts/list-popups.sh --deps`.
 
-| Key | Popup |
+| Key | Action |
 | --- | --- |
 | `Prefix+Enter` | Quick menu |
-| `Prefix+C-h` | Popup help + dependency status |
-| `Prefix+O` | quick chat via [`ocq`](https://github.com/PatrickFanella/ocq) |
-| Menu `o` | opencode |
-| `Prefix+T` | shell |
-| Menu `N` | daily note |
-| `Prefix+g` | lazygit |
-| `Prefix+Y` | yazi |
-| `Prefix+F` | ferrosonic |
-| `Prefix+C-b` | tmux key list |
-| `Prefix+Z` | dotfiles picker |
-| `Prefix+R` | reload tmux config |
+| `Prefix+C-h` | Help, dependency status and optional adapter discovery |
+| `Prefix+T` | Shell |
+| Menu `N` | Daily note |
+| Menu `P` | Timer |
+| `Prefix+C-b` | tmux keys |
+| `Prefix+R` | Reload tmux config |
+
+To retain the previous full menu and direct keys, set these before loading:
+
+```tmux
+set -g @tmux-popups-profile 'full'
+set -g @tmux-popups-availability 'ignore'
+```
+
+`full` enables every shipped row. `ignore` retains the previous behavior of
+launching adapters even when their dependencies are missing. Leave availability
+at its default to show unavailable tools as disabled menu labels instead.
+Local rows and per-entry options still take precedence over the profile.
+
+Enable an optional adapter without copying or deleting its row:
+
+```tmux
+set -g @tmux-popups-lazygit-enabled 'on'
+set -g @tmux-popups-chat-enabled 'off'
+```
+
+Reload through the plugin entrypoint after changing settings. An `off` row has
+no direct or menu binding and cannot be dispatched by ID. It remains listed for
+discovery. Existing seven-, eight- and nine-column local rows default to enabled,
+including local overrides of optional shipped rows.
 
 Session switching is intentionally left to [`tmux-sessionx`](https://github.com/omerxx/tmux-sessionx). Example:
 
@@ -106,6 +127,8 @@ set -g @tmux-popups-local-registry '~/.config/tmux-popups/popups.local.tsv'
 set -g @tmux-popups-enable-vscode 'on'
 set -g @tmux-popups-vscode-command 'code .'
 set -g @tmux-popups-yazi-mode 'window'
+set -g @tmux-popups-profile 'small'
+set -g @tmux-popups-availability 'show-disabled'
 ```
 
 `@tmux-popups-config-file` is the tmux config file reloaded by the reload binding (`@tmux-popups-reload-key`, default `R`) and the Quick Menu "reload tmux" entry. Defaults to `~/.tmux.conf`. Set this if your config lives elsewhere, for example:
@@ -133,7 +156,7 @@ Use `-` in a row's width or height to inherit the default width/height options.
 Rows are tab-separated:
 
 ```tsv
-id	direct_key	menu_key	title	width	height	command	mode	completion
+id	direct_key	menu_key	title	width	height	command	mode	completion	enabled	deps
 ```
 
 | Column | Meaning |
@@ -147,11 +170,44 @@ id	direct_key	menu_key	title	width	height	command	mode	completion
 | `command` | Plugin-relative executable path, or `-` for an interactive shell |
 | `mode` | Optional `popup`, `window`, `command`, or `-` for compatibility defaults |
 | `completion` | Optional `foreground`, `background`, or `-` for foreground |
+| `enabled` | Optional `on` or `off`; old rows default to `on` |
+| `deps` | Optional `auto`, `-`, or space-separated command groups with `|` alternatives |
 
 Blank lines and lines beginning with `#` are ignored. Seven-column rows remain
-valid. Eight-column rows add mode; nine-column rows add completion. Supplied
+valid. Eight-column rows add mode; nine-column rows add completion. Ten columns
+add enabled; eleven add dependency metadata. Supplied
 fields must be nonempty, so use `-` for a default. `--tsv` emits nine columns
 with resolved mode and completion; `--deps-tsv` appends dependencies and status.
+`--state-tsv` emits those nine columns followed by enabled, dependencies and
+status. All listing modes retain disabled and unavailable rows.
+
+`auto` checks the effective shipped adapter path, never the entry ID. Renaming
+an adapter entry keeps its dependency checks; replacing its command changes
+them. Unknown custom executables have no inferred external requirements. Their
+file must still exist and be executable. Declare requirements explicitly when
+needed, for example `python3 fzf|sk`, or use `-` to bypass external checks. This
+metadata does not evaluate shell expressions or change command arguments.
+
+Availability policies apply to enabled rows:
+
+- `show-disabled`, the default, omits unavailable direct bindings and shows a
+  disabled menu label with `missing:<commands>`.
+- `hide-unavailable` omits unavailable direct and menu bindings. Help and CLI
+  dependency output still show the reason.
+- `ignore` launches without a dependency preflight, for explicit compatibility
+  or user-managed environments.
+
+Dispatch rechecks availability, so a removed dependency cannot launch silently
+from a stale menu. It reports the missing group to the origin client and stderr
+and returns 127. Dependency checks establish presence, not provider credentials,
+configuration or terminal compatibility. `khal` also needs a successful
+`--version`, matching its adapter's fallback to `cal`.
+
+The editor resolver honors a nonempty `EDITOR` as one executable name or path.
+Otherwise it chooses the first available `nvim`, `vim`, then `vi`. The shell
+resolver honors a nonempty `SHELL`, otherwise it uses `bash`. An explicit missing
+editor or shell is reported as unavailable rather than replaced by another
+command. Execution and dependency checks use these same resolvers.
 
 Legacy rows and rows with mode `-` default to popup. The four shipped adapters
 `yazi.sh`, `home.sh`, `projects.sh` and `downloads.sh` under `scripts/tools/` default
@@ -421,14 +477,14 @@ ownership state if applying the transition fails.
 
 ### Registry validation and cache publication
 
-Every non-comment registry row must have seven, eight or nine nonempty TSV fields.
+Every non-comment registry row must have seven through eleven nonempty TSV fields.
 IDs accept letters, digits, underscores and hyphens. Keys accept a single
 printable character or a named tmux key with C-, M- or S- modifiers. Use `-`
 to disable a shortcut. Dimensions accept cell counts from 1 through 2147483647, 1% through
 100%, or `-` for the configured default. Commands must name an existing
 executable plugin-relative file, or `-` for the shell. Optional tool availability
-remains a dependency diagnostic, so a wrapper can be valid while its tool is
-not installed. Titles cannot contain tmux formats or carriage returns.
+is checked separately, so a wrapper can be valid while its tool is not installed.
+Disabled rows still undergo full validation, including metadata and shortcuts. Titles cannot contain tmux formats or carriage returns.
 
 Errors identify the registry file and line, and listing emits no partial TSV.
 All source rows are checked, including rows replaced by an intentional same-ID
@@ -438,7 +494,8 @@ vscode shortcuts fail generation. Direct and menu keys use separate namespaces.
 Listing checks every source key against the selected tmux server before merging.
 Target-normalized collisions identify both source rows or the built-in slot.
 
-Listing and generation require a running target tmux server. Generation writes
+Generation requires a running target tmux server. Listing can use a private
+temporary server when called outside tmux. Generation writes
 an owned temporary file beside `generated.conf`, parses it on that server, and validates bindings
 in disposable key tables without changing effective keys or ownership. Only a
 successful validation replaces the cache with an atomic rename. Failure leaves

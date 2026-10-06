@@ -93,7 +93,9 @@ EOF
 }
 
 open_editor() {
-  exec "${EDITOR:-nvim}" "$@"
+  local editor
+  editor="$(editor_command)" || die "no usable editor: ${EDITOR:-nvim|vim|vi}"
+  exec "$editor" "$@"
 }
 
 copy_text() {
@@ -167,4 +169,91 @@ origin_client() {
 close_origin_popup() {
   origin_client || return 1
   tmux display-popup -C -c "$TMUX_POPUPS_CLIENT"
+}
+
+# Resolve once by the same rules used by availability checks and execution.
+editor_command() {
+  local candidate
+  if [[ -n "${EDITOR:-}" ]]; then
+    command -v "$EDITOR" >/dev/null 2>&1 || return 1
+    printf '%s' "$EDITOR"
+    return
+  fi
+  for candidate in nvim vim vi; do
+    if command -v "$candidate" >/dev/null 2>&1; then printf '%s' "$candidate"; return; fi
+  done
+  return 1
+}
+
+shell_command() {
+  local candidate="${SHELL:-bash}"
+  command -v "$candidate" >/dev/null 2>&1 || return 1
+  printf '%s' "$candidate"
+}
+
+valid_dependencies() {
+  [[ "$1" == auto || "$1" == - ]] && return 0
+  [[ "$1" =~ ^[a-zA-Z0-9_./+-]+(\|[a-zA-Z0-9_./+-]+)*(\ [a-zA-Z0-9_./+-]+(\|[a-zA-Z0-9_./+-]+)*)*$ ]]
+}
+
+deps_for_command() {
+  case "$1" in
+    -) printf shell ;;
+    scripts/popup-help.sh|scripts/tools/keys.sh) printf tmux ;;
+    scripts/tools/chat.sh) printf 'ocq node' ;;
+    scripts/tools/opencode.sh) printf opencode ;;
+    scripts/tools/tasks.sh) printf 'task editor less' ;;
+    scripts/tools/notes.sh|scripts/tools/zshrc.sh|scripts/tools/tmux-local.sh) printf editor ;;
+    scripts/tools/docs.sh) printf 'tldr|man' ;;
+    scripts/tools/calendar.sh) printf 'khal|cal' ;;
+    scripts/tools/calc.sh) printf python3 ;;
+    scripts/tools/ssh.sh) printf 'ssh fzf' ;;
+    scripts/tools/clipboard.sh) printf 'cliphist fzf wl-copy' ;;
+    scripts/tools/info.sh) printf 'curl newsboat editor less' ;;
+    scripts/tools/timer.sh) printf sleep ;;
+    scripts/tools/logs.sh) printf 'journalctl|tail' ;;
+    scripts/tools/watch.sh) printf watch ;;
+    scripts/tools/markdown.sh) printf 'fzf glow|bat|less' ;;
+    scripts/tools/lazygit.sh) printf lazygit ;;
+    scripts/tools/yazi.sh|scripts/tools/home.sh|scripts/tools/projects.sh|scripts/tools/downloads.sh) printf yazi ;;
+    scripts/tools/ferrosonic.sh) printf ferrosonic ;;
+    scripts/tools/sessions.sh) printf tmux ;;
+    *) printf '-' ;; # Custom executables have no inferred external requirements.
+  esac
+}
+
+have_one() {
+  local group="$1" item
+  local -a items=()
+  IFS='|' read -r -a items <<<"$group"
+  for item in "${items[@]}"; do
+    case "$item" in
+      shell) shell_command >/dev/null && return 0 ;;
+      editor) editor_command >/dev/null && return 0 ;;
+      khal) command -v khal >/dev/null 2>&1 && khal --version >/dev/null 2>&1 && return 0 ;;
+      *) command -v "$item" >/dev/null 2>&1 && return 0 ;;
+    esac
+  done
+  return 1
+}
+
+deps_status() {
+  local deps="$1" dep
+  local -a missing=()
+  [[ "$deps" == - ]] && { printf ok; return; }
+  for dep in $deps; do
+    have_one "$dep" || missing+=("$dep")
+  done
+  if ((${#missing[@]} == 0)); then printf ok
+  else printf 'missing:%s' "$(IFS=,; printf '%s' "${missing[*]}")"; fi
+}
+
+availability_policy() {
+  local value
+  value="$(tmux show-option -gqv @tmux-popups-availability 2>/dev/null || true)"
+  value="${value:-show-disabled}"
+  case "$value" in
+    show-disabled|hide-unavailable|ignore) printf '%s' "$value" ;;
+    *) die "invalid availability policy: $value" ;;
+  esac
 }
