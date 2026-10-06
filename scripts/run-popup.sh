@@ -21,7 +21,7 @@ else
   export TMUX_POPUPS_DIRECTORY="${TMUX_POPUPS_DIRECTORY:-$PWD}"
 fi
 cd -- "$TMUX_POPUPS_DIRECTORY" || die "origin directory is unavailable: $TMUX_POPUPS_DIRECTORY"
-rows="$("$root/scripts/list-popups.sh" --tsv)"
+rows="$("$root/scripts/list-popups.sh" --state-tsv)"
 
 row="$(
   awk -F '\t' -v wanted="$id" '
@@ -31,7 +31,16 @@ row="$(
 )" || row=""
 
 if [[ -n "$row" ]]; then
-  IFS=$'\t' read -r _popup_id _direct_key _menu_key _title _width _height command mode completion <<<"$row"
+  IFS=$'\t' read -r _popup_id _direct_key _menu_key _title _width _height command mode completion enabled deps status <<<"$row"
+
+  [[ "$enabled" == on ]] || die "popup $id is disabled; set @tmux-popups-$id-enabled on and reload"
+  policy="$(availability_policy)"
+  if [[ "$status" != ok && "$policy" != ignore ]]; then
+    message="tmux-popups: $id unavailable ($status); see scripts/list-popups.sh --deps"
+    if [[ "${2:-}" == --launch ]]; then tmux display-message -c "$TMUX_POPUPS_CLIENT" "$message"; fi
+    printf '%s\n' "$message" >&2
+    exit 127
+  fi
 
   if [[ "$mode" == command ]]; then
     if [[ "$completion" == background ]]; then
@@ -70,10 +79,8 @@ if [[ -n "$row" ]]; then
   fi
 
   if [[ "$command" == "-" ]]; then
-    if [[ -n "${SHELL:-}" ]]; then
-      exec "$SHELL"
-    fi
-    exec /usr/bin/env bash
+    shell="$(shell_command)" || die "no usable shell: ${SHELL:-bash}"
+    exec "$shell"
   fi
 
   exec "$root/$command"

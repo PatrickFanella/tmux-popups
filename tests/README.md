@@ -71,3 +71,15 @@ also preserve literal newline/tab directories and the origin contract on two
 clients. Invalid extensions preserve the last-good config and bindings.
 The longer suite deadline accommodates these added PTY cases; each operation
 and completion wait retains its own shorter bound.
+
+Availability checks cover the small default and full-menu compatibility, disabled
+row discovery, per-entry option overrides, prior binding restoration and user
+replacement preservation on reload. Missing and alternative dependencies change
+both direct bindings and menu labels; stale dispatch reports a missing group to
+the origin client. Same-ID command replacements, renamed adapters and a custom
+executable prove dependency checks follow the effective command. A fixture with
+only vi executes daily notes, while missing explicit EDITOR/SHELL values remain
+unavailable. An unrunnable khal uses the cal fallback. Invalid enabled/dependency
+metadata, including disabled rows and empty explicit enabled options, preserves
+the last-good config and bindings. Existing regressions select full/ignore to
+continue exercising the pre-existing complete binding configuration.

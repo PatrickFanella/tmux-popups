@@ -8,96 +8,52 @@ local_registry="$(resolve_local_registry)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/list-popups.sh [--tsv|--pretty|--deps|--deps-tsv]
+Usage: scripts/list-popups.sh [--tsv|--pretty|--deps|--deps-tsv|--state-tsv]
 
 Merges popups.tsv with an optional local registry. Later rows with the same id
 override earlier rows. Blank lines and # comments are ignored.
 EOF
 }
 
-deps_for_id() {
-  case "$1" in
-    help) printf 'tmux less|cat' ;;
-    chat) printf 'ocq node' ;;
-    opencode) printf 'opencode' ;;
-    shell) printf 'shell' ;;
-    tasks) printf 'task' ;;
-    notes) printf 'editor' ;;
-    docs) printf 'tldr|man less|cat' ;;
-    calendar) printf 'khal|cal' ;;
-    calc) printf 'python3' ;;
-    ssh) printf 'ssh fzf' ;;
-    clipboard) printf 'cliphist fzf wl-copy' ;;
-    info) printf 'curl newsboat' ;;
-    timer) printf 'shell' ;;
-    logs) printf 'journalctl tail' ;;
-    watch) printf 'watch' ;;
-    markdown) printf 'fzf glow|bat|less' ;;
-    lazygit) printf 'lazygit' ;;
-    yazi|home|projects|downloads) printf 'yazi' ;;
-    ferrosonic) printf 'ferrosonic' ;;
-    keys) printf 'tmux less|cat' ;;
-    zshrc|tmux-local) printf 'editor' ;;
-    sessions) printf 'tmux' ;;
-    *) printf '-' ;;
-  esac
-}
-
-have_one() {
-  local group="$1" item
-  IFS='|' read -r -a items <<<"$group"
-  for item in "${items[@]}"; do
-    case "$item" in
-      shell) [[ -n "${SHELL:-}" ]] && return 0 ;;
-      editor)
-        if [[ -n "${EDITOR:-}" ]] || command -v nvim >/dev/null 2>&1 || command -v vim >/dev/null 2>&1 || command -v vi >/dev/null 2>&1; then
-          return 0
-        fi
-        ;;
-      cat) command -v cat >/dev/null 2>&1 && return 0 ;;
-      *) command -v "$item" >/dev/null 2>&1 && return 0 ;;
-    esac
-  done
-  return 1
-}
-
-deps_status() {
-  local deps="$1" dep missing=()
-  [[ -z "$deps" || "$deps" == "-" ]] && { printf 'ok'; return; }
-  for dep in $deps; do
-    if ! have_one "$dep"; then
-      missing+=("$dep")
-    fi
-  done
-  if ((${#missing[@]} == 0)); then
-    printf 'ok'
-  else
-    printf 'missing:%s' "$(IFS=,; printf '%s' "${missing[*]}")"
-  fi
-}
-
 # Validate every source row, even one replaced by a later same-ID override.
 # Buffer the result so a failure never emits a usable partial registry.
 merged_tsv() (
-  local registries=("$default_registry") records source line id direct menu title width height command launch_mode completion key slot canonical
+  local registries=("$default_registry") records source line id direct menu title width height command launch_mode completion key slot canonical enabled deps override profile
   local -a order=()
-  local -A rows=() locations=() shortcuts=() target_keys=()
+  local -A rows=() locations=() shortcuts=() target_keys=() overrides=()
   [[ -r "$local_registry" ]] && registries+=("$local_registry")
+  profile="$(tmux show-option -gqv @tmux-popups-profile 2>/dev/null || true)"
+  profile="${profile:-small}"
+  [[ "$profile" == small || "$profile" == full ]] || die "invalid profile: $profile"
+  # Read enabled overrides in one server round trip. Values remain literal data.
+  while IFS=' ' read -r key override; do
+    [[ "$key" == @tmux-popups-*-enabled ]] || continue
+    override="${override#\"}"; override="${override%\"}"
+    overrides["$key"]="$override"
+  done < <(tmux show-options -g 2>/dev/null || true)
   records="$(awk -F '\t' '
+    BEGIN { OFS = "\t" }
     /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
     $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand" ||
     $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode" ||
-    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion" { next }
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion" ||
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled" ||
+    $0 == "id\tdirect_key\tmenu_key\ttitle\twidth\theight\tcommand\tmode\tcompletion\tenabled\tdeps" { next }
     {
-      if (NF < 7 || NF > 9) {
-        printf "%s:%d: expected 7 TSV fields or 8/9 extended fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
+      if (NF < 7 || NF > 11) {
+        printf "%s:%d: expected 7 TSV fields or 8/9/10/11 extended fields, got %d\n", FILENAME, FNR, NF > "/dev/stderr"
         bad = 1; next
       }
       for (i = 1; i <= NF; i++) if ($i == "") {
         printf "%s:%d: empty required field %d\n", FILENAME, FNR, i > "/dev/stderr"
         bad = 1
       }
-      print FILENAME "\t" FNR "\t" $0 (NF == 7 ? "\t-\tforeground" : NF == 8 ? "\tforeground" : "")
+      n = NF
+      if (n < 8) $8 = "-"
+      if (n < 9) $9 = "foreground"
+      if (n < 10) $10 = "on"
+      if (n < 11) $11 = "auto"
+      print FILENAME "\t" FNR "\t" $0
     }
     END { if (bad) exit 1 }
   ' "${registries[@]}")" || return 1
@@ -137,7 +93,7 @@ merged_tsv() (
     printf 'bind-key -T "%s" "%s" display-message probe%d\nlist-keys -T "%s"\n' \
       "$table" "$quoted" "${#inputs[@]}" "$table" >>"$probe"
   }
-  while IFS=$'\t' read -r source line id direct menu title width height command launch_mode completion; do
+  while IFS=$'\t' read -r source line id direct menu title width height command launch_mode completion enabled deps; do
     [[ -n "$source" ]] || continue
     slot="$source:$line"
     [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "$slot: unsupported popup id: $id"
@@ -174,8 +130,17 @@ merged_tsv() (
       *) die "$slot: invalid completion: $completion" ;;
     esac
     [[ "$launch_mode:$command" != command:- ]] || die "$slot: command mode requires an executable target"
+    [[ "$enabled" == on || "$enabled" == off ]] || die "$slot: invalid enabled setting: $enabled"
+    valid_dependencies "$deps" || die "$slot: invalid dependencies: $deps"
+    if [[ "$source" == "$default_registry" && "$profile" == full ]]; then enabled=on; fi
+    override="${overrides[@tmux-popups-$id-enabled]:-}"
+    if [[ -v overrides["@tmux-popups-$id-enabled"] ]]; then
+      [[ "$override" == on || "$override" == off ]] || die "$slot: invalid enabled override: $override"
+      enabled="$override"
+    fi
+    [[ "$deps" != auto ]] || deps="$(deps_for_command "$command")"
     [[ -v rows["$id"] ]] || order+=("$id")
-    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"$'\t'"$launch_mode"$'\t'"$completion"
+    rows["$id"]="$id"$'\t'"$direct"$'\t'"$menu"$'\t'"$title"$'\t'"$width"$'\t'"$height"$'\t'"$command"$'\t'"$launch_mode"$'\t'"$completion"$'\t'"$enabled"$'\t'"$deps"
     locations["$id"]="$slot"
   done <<<"$records"
   local menu_key reload_key enable_vscode
@@ -227,7 +192,7 @@ merged_tsv() (
     target_key v; shortcuts["menu:$canonical"]='built-in vscode'
   fi
   for id in "${order[@]}"; do
-    IFS=$'\t' read -r id direct menu title width height command launch_mode completion <<<"${rows[$id]}"
+    IFS=$'\t' read -r id direct menu title width height command launch_mode completion enabled deps <<<"${rows[$id]}"
     for key in direct menu; do
       [[ "${!key}" == "-" ]] && continue
       target_key "${!key}"
@@ -242,21 +207,22 @@ merged_tsv() (
 mode="${1:---pretty}"
 case "$mode" in
   --help|-h) usage ;;
-  --tsv) merged_tsv ;;
+  --tsv) merged_tsv | cut -f1-9 ;;
   --pretty)
     printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' id direct menu title width height mode completion command
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion; do
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps; do
       printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$launch_mode" "$completion" "$command"
     done
     ;;
-  --deps|--deps-tsv)
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion; do
-      deps="$(deps_for_id "$id")"
+  --deps|--deps-tsv|--state-tsv)
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps; do
       status="$(deps_status "$deps")"
-      if [[ "$mode" == "--deps-tsv" ]]; then
+      if [[ "$mode" == "--state-tsv" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$enabled" "$deps" "$status"
+      elif [[ "$mode" == "--deps-tsv" ]]; then
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$deps" "$status"
       else
-        printf '%-14s %-18s %-24s %s\n' "$id" "$title" "$deps" "$status"
+        printf '%-14s %-18s %-24s %s\n' "$id" "$title" "$deps" "$enabled/$status"
       fi
     done
     ;;

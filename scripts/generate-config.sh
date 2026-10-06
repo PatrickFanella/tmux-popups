@@ -67,8 +67,9 @@ validate_literal 'registry path' "$local_registry"
 valid_dimension "$default_width" && [[ "$default_width" != "-" ]] || die "invalid default width: $default_width"
 valid_dimension "$default_height" && [[ "$default_height" != "-" ]] || die "invalid default height: $default_height"
 validate_literal 'vscode command' "$vscode_command"
-rows="$("$root/scripts/list-popups.sh" --tsv)"
-while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
+policy="$(availability_policy)"
+rows="$("$root/scripts/list-popups.sh" --state-tsv)"
+while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion enabled deps status; do
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
   validate_literal "title for $id" "$title"
 done <<<"$rows"
@@ -103,16 +104,24 @@ popup_action() {
   printf '# Local source: %s\n\n' "$local_registry"
   printf 'bind-key "%s" source-file "%s" \\; display-message "tmux config reloaded"\n\n' "$(q "$reload_key")" "$(q "$config_file")"
 
-  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
+  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion enabled deps status; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
+    [[ "$enabled" == on ]] || continue
+    [[ "$status" == ok || "$policy" == ignore ]] || continue
     [[ "$direct_key" == "-" ]] && continue
     printf 'bind-key "%s" %s\n' "$(q "$direct_key")" "$(popup_action "$id")"
   done
 
   printf '\nbind-key "%s" display-menu -T "#[align=centre] Quick Menu " -x C -y C' "$(q "$menu_key")"
-  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
+  printf '%s\n' "$rows" | while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion enabled deps status; do
     [[ -z "${id:-}" || "$id" == \#* ]] && continue
     [[ "$row_menu_key" == "-" ]] && continue
+    [[ "$enabled" == on ]] || continue
+    if [[ "$status" != ok && "$policy" != ignore ]]; then
+      [[ "$policy" != hide-unavailable ]] || continue
+      printf ' "%s" "" ""' "$(q "-$title [$status]")"
+      continue
+    fi
     action="$(popup_action "$id" on)"
     printf ' "%s" "%s" "%s"' "$(q "$title")" "$(q "$row_menu_key")" "$(q "$action")"
   done
@@ -149,8 +158,9 @@ expected=2
     printf 'bind-key -T "%s" "v" display-message vscode\n' "$table-menu"
     ((expected+=1))
   fi
-  while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion; do
-    [[ -n "$id" && "$row_menu_key" != "-" ]] || continue
+  while IFS=$'\t' read -r id direct_key row_menu_key title width height command launch_mode completion enabled deps status; do
+    [[ -n "$id" && "$row_menu_key" != "-" && "$enabled" == on ]] || continue
+    [[ "$status" == ok || "$policy" == ignore ]] || continue
     printf 'bind-key -T "%s" "%s" display-message "%s"\n' "$table-menu" "$(q "$row_menu_key")" "$id"
     ((expected+=1))
   done <<<"$rows"

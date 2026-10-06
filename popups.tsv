@@ -1,26 +1,26 @@
-# id	direct_key	menu_key	title	width	height	command
-help	C-h	H	popup help	80%	80%	scripts/popup-help.sh
-chat	O	g	quick chat	80%	80%	scripts/tools/chat.sh
-opencode	-	o	opencode	90%	85%	scripts/tools/opencode.sh
-shell	T	Enter	shell	75%	75%	-
-tasks	-	T	tasks	80%	80%	scripts/tools/tasks.sh
-notes	-	N	notes	80%	80%	scripts/tools/notes.sh
-docs	-	M	docs	80%	80%	scripts/tools/docs.sh
-calendar	-	A	calendar	80%	80%	scripts/tools/calendar.sh
-calc	-	=	calc	75%	75%	scripts/tools/calc.sh
-ssh	-	S	ssh	80%	80%	scripts/tools/ssh.sh
-clipboard	-	C	clipboard	80%	80%	scripts/tools/clipboard.sh
-info	-	I	info	80%	80%	scripts/tools/info.sh
-timer	-	P	timer	75%	75%	scripts/tools/timer.sh
-logs	-	L	logs	90%	85%	scripts/tools/logs.sh
-watch	-	W	watch	90%	85%	scripts/tools/watch.sh
-markdown	-	G	markdown	90%	85%	scripts/tools/markdown.sh
-lazygit	g	y	lazygit	80%	80%	scripts/tools/lazygit.sh
-yazi	Y	r	yazi	80%	80%	scripts/tools/yazi.sh
-ferrosonic	F	f	ferrosonic	80%	80%	scripts/tools/ferrosonic.sh
-keys	C-b	b	tmux keys	90%	85%	scripts/tools/keys.sh
-zshrc	Z	z	dotfiles	80%	80%	scripts/tools/zshrc.sh
-tmux-local	-	t	tmux.local.conf	80%	80%	scripts/tools/tmux-local.sh
-home	-	h	home	80%	80%	scripts/tools/home.sh
-projects	-	p	projects	80%	80%	scripts/tools/projects.sh
-downloads	-	d	downloads	80%	80%	scripts/tools/downloads.sh
+# id	direct_key	menu_key	title	width	height	command	mode	completion	enabled	deps
+help	C-h	H	popup help	80%	80%	scripts/popup-help.sh	-	foreground	on	auto
+chat	O	g	quick chat	80%	80%	scripts/tools/chat.sh	-	foreground	off	auto
+opencode	-	o	opencode	90%	85%	scripts/tools/opencode.sh	-	foreground	off	auto
+shell	T	Enter	shell	75%	75%	-	-	foreground	on	auto
+tasks	-	T	tasks	80%	80%	scripts/tools/tasks.sh	-	foreground	off	auto
+notes	-	N	notes	80%	80%	scripts/tools/notes.sh	-	foreground	on	auto
+docs	-	M	docs	80%	80%	scripts/tools/docs.sh	-	foreground	off	auto
+calendar	-	A	calendar	80%	80%	scripts/tools/calendar.sh	-	foreground	off	auto
+calc	-	=	calc	75%	75%	scripts/tools/calc.sh	-	foreground	off	auto
+ssh	-	S	ssh	80%	80%	scripts/tools/ssh.sh	-	foreground	off	auto
+clipboard	-	C	clipboard	80%	80%	scripts/tools/clipboard.sh	-	foreground	off	auto
+info	-	I	info	80%	80%	scripts/tools/info.sh	-	foreground	off	auto
+timer	-	P	timer	75%	75%	scripts/tools/timer.sh	-	foreground	on	auto
+logs	-	L	logs	90%	85%	scripts/tools/logs.sh	-	foreground	off	auto
+watch	-	W	watch	90%	85%	scripts/tools/watch.sh	-	foreground	off	auto
+markdown	-	G	markdown	90%	85%	scripts/tools/markdown.sh	-	foreground	off	auto
+lazygit	g	y	lazygit	80%	80%	scripts/tools/lazygit.sh	-	foreground	off	auto
+yazi	Y	r	yazi	80%	80%	scripts/tools/yazi.sh	-	foreground	off	auto
+ferrosonic	F	f	ferrosonic	80%	80%	scripts/tools/ferrosonic.sh	-	foreground	off	auto
+keys	C-b	b	tmux keys	90%	85%	scripts/tools/keys.sh	-	foreground	on	auto
+zshrc	Z	z	dotfiles	80%	80%	scripts/tools/zshrc.sh	-	foreground	off	auto
+tmux-local	-	t	tmux.local.conf	80%	80%	scripts/tools/tmux-local.sh	-	foreground	off	auto
+home	-	h	home	80%	80%	scripts/tools/home.sh	-	foreground	off	auto
+projects	-	p	projects	80%	80%	scripts/tools/projects.sh	-	foreground	off	auto
+downloads	-	d	downloads	80%	80%	scripts/tools/downloads.sh	-	foreground	off	auto

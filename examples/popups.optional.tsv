@@ -1,5 +1,6 @@
 # Optional popups with extra dependencies.
-# Copy rows into ../popups.tsv, then reload tmux.
+# Enable shipped rows with @tmux-popups-<id>-enabled on, then reload.
+# Or copy rows into your local registry to enable or override them.
 # id	direct_key	menu_key	title	width	height	command
 # Native tmux session picker. Prefer tmux-sessionx if you use it.
 sessions	C-j	j	sessions	80%	80%	scripts/tools/sessions.sh

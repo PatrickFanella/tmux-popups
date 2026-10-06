@@ -24,7 +24,7 @@ while true; do
     d|done) printf 'ID(s) done: '; read -ra ids || continue; ((${#ids[@]})) && task "${ids[@]}" "done"; pause ;;
     m|mod|modify) printf 'ID: '; read -r id || continue; [[ -z "$id" ]] && continue; printf 'Modification: '; read -ra mod || continue; ((${#mod[@]})) && task "$id" modify "${mod[@]}"; pause ;;
     p|projects) task projects | less -R ;;
-    e|edit) "${EDITOR:-nvim}" "$taskrc" ;;
+    e|edit) "$(editor_command)" "$taskrc" ;;
     q|quit|/quit|exit|/exit) exit 0 ;;
   esac
 done
