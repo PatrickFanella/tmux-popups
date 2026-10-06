@@ -330,7 +330,8 @@ popups.tsv + optional local registry
   -> scripts/list-popups.sh --tsv
   -> scripts/generate-config.sh
   -> ~/.cache/tmux-popups/generated.conf
-  -> tmux source-file
+  -> scripts/apply-config.sh
+  -> reconciled tmux prefix bindings
 ```
 
 `scripts/run-popup.sh <id>` reads the merged registry and executes the matching command inside `display-popup`.
@@ -343,6 +344,7 @@ popups.tsv + optional local registry
 - `tmux-popups.tmux`: TPM/manual entrypoint
 - `scripts/list-popups.sh`: merged registry and dependency listing
 - `scripts/generate-config.sh`: generates tmux bindings
+- `scripts/apply-config.sh`: validates and reconciles binding ownership
 - `scripts/run-popup.sh`: dispatches popup ids to tool scripts
 - `scripts/doctor.sh`: diagnostics
 - `scripts/popup-help.sh`: help popup
@@ -358,3 +360,24 @@ MIT
 Run `scripts/check.sh` for syntax, ShellCheck and isolated launcher regressions.
 See [the verification guide](tests/README.md) for required tools, fixture isolation
 and the separate real-terminal release gates.
+
+### Binding restoration on reload
+
+The plugin saves each effective prefix binding and its prior binding on the tmux
+server. Changing or removing a direct, menu or reload key restores the prior
+binding, including its note and repeat flag. If the key had no prior binding,
+it is unbound. Restoration only happens when the current binding still matches
+what the plugin installed. Other key tables are untouched.
+
+A user replacement or explicit unbind stays in effect across repeated reloads,
+even while that plugin key remains configured. Removing the key from the plugin
+configuration ends its ownership record. Configuring it again later starts a
+new record. New keys retain the existing overwrite behavior; conflict policy
+is tracked in #18. Bindings from versions that did not record ownership cannot
+be safely identified or restored automatically.
+
+Reload through `tmux-popups.tmux` so generation and reconciliation both run.
+The reconciler validates new bindings in a temporary key table before changing
+prefix keys, serializes reloads on the server, and rolls back touched keys and
+ownership state if applying the transition fails. Cache publication and registry
+validation are separate work in #11.
