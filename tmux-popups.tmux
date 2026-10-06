@@ -6,4 +6,4 @@ CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups"
 GENERATED_CONFIG="$CACHE_DIR/generated.conf"
 
 "$CURRENT_DIR/scripts/generate-config.sh"
-tmux source-file "$GENERATED_CONFIG"
+"$CURRENT_DIR/scripts/apply-config.sh" "$GENERATED_CONFIG"

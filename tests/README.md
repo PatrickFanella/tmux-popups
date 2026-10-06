@@ -44,3 +44,10 @@ picker cancellation/failure and failed decoding. A clipboard substitute checks
 exact selected bytes, including NUL, non-UTF-8 bytes and trailing newlines,
 without touching the system clipboard. Owned temporary files are checked after
 each run. Real cliphist/Wayland checks remain separate environment evidence.
+
+Binding checks use isolated tmux servers to change, disable and remove entry,
+menu and reload keys. They compare effective bindings and ownership over repeated
+reloads, restore repeat flags and multiline notes, preserve user replacements
+and explicit unbinds, and leave root/custom tables unchanged. Alias collisions,
+invalid-key rejection, partial-apply rollback and checkout/cache changes are
+covered. Special paths and note text must not execute injection markers.
