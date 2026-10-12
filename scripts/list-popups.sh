@@ -70,7 +70,7 @@ merged_tsv() (
   local -A key_locations=() identities=()
   probe="$(mktemp "${TMPDIR:-/tmp}/tmux-popups-keys.XXXXXXXX")"
   table="tmux-popups-keys-${probe##*/}"
-  # shellcheck disable=SC2329 # Invoked by the EXIT trap in this subshell.
+  # shellcheck disable=SC2317,SC2329 # Invoked by the EXIT trap in this subshell.
   cleanup_keys() {
     "${key_tmux[@]}" unbind-key -a -T "$table" 2>/dev/null || true
     if [[ -n "$key_socket_directory" ]]; then
@@ -155,8 +155,12 @@ merged_tsv() (
   reload_key="$(tmux show-option -gqv @tmux-popups-reload-key 2>/dev/null || true)"
   enable_vscode="$(tmux show-option -gqv @tmux-popups-enable-vscode 2>/dev/null || true)"
   menu_key="${menu_key:-Enter}"; reload_key="${reload_key:-R}"
-  valid_key "$menu_key" && [[ "$menu_key" != "-" ]] || die "invalid menu key: unknown key $menu_key"
-  valid_key "$reload_key" && [[ "$reload_key" != "-" ]] || die "invalid reload key: unknown key $reload_key"
+  if ! valid_key "$menu_key" || [[ "$menu_key" == "-" ]]; then
+    die "invalid menu key: unknown key $menu_key"
+  fi
+  if ! valid_key "$reload_key" || [[ "$reload_key" == "-" ]]; then
+    die "invalid reload key: unknown key $reload_key"
+  fi
   queue_key "$menu_key" 'built-in quick menu'
   queue_key "$reload_key" 'built-in reload'
   queue_key R 'built-in menu reload'

@@ -2,6 +2,7 @@ name: Launcher verification
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
