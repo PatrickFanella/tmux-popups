@@ -64,8 +64,12 @@ validate_literal() {
 validate_literal 'plugin path' "$root"
 validate_literal 'config path' "$config_file"
 validate_literal 'registry path' "$local_registry"
-valid_dimension "$default_width" && [[ "$default_width" != "-" ]] || die "invalid default width: $default_width"
-valid_dimension "$default_height" && [[ "$default_height" != "-" ]] || die "invalid default height: $default_height"
+if ! valid_dimension "$default_width" || [[ "$default_width" == "-" ]]; then
+  die "invalid default width: $default_width"
+fi
+if ! valid_dimension "$default_height" || [[ "$default_height" == "-" ]]; then
+  die "invalid default height: $default_height"
+fi
 validate_literal 'vscode command' "$vscode_command"
 policy="$(availability_policy)"
 rows="$("$root/scripts/list-popups.sh" --state-tsv)"
