@@ -1,5 +1,12 @@
 # tmux-popups
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup.svg">
+  <img src="docs/brand/mark-mono-light.svg" alt="tmux-popups logo. A popup over a pane: a thin-outlined rectangle with a smaller solid rectangle inset at its centre, carrying a thicker top bar and one green block cursor." height="80">
+</picture>
+
+A [SUBCULT](https://subcult.tv) project.
+
 Small tmux popup toolkit with a TSV registry, generated bindings, shared shell helpers, dependency checks, and optional local overrides.
 
 ![tmux-popups demo](assets/demo.gif)
