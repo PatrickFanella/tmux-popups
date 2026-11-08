@@ -2,7 +2,12 @@
 set -euo pipefail
 
 # Ownership belongs to this tmux server, independently of cache/checkouts.
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. "$root/scripts/lib.sh"
+explain=no
+if [[ "${1:-}" == --explain ]]; then explain=yes; shift; fi
 config="${1:?generated config required}"
+policy="$(binding_conflict_policy)"
 scratch="$(mktemp -d)"
 table="tmux-popups-stage-${scratch##*/}"
 locked=no
@@ -29,17 +34,6 @@ locked=yes
 # Snapshot the input so overlapping cache writers cannot alter our transaction.
 cp "$config" "$scratch/input"
 tmux source-file -n "$scratch/input"
-# Execute bind commands only in a disposable table. This validates keys and
-# commands without running their actions or changing any effective user key.
-while IFS= read -r line; do
-  if [[ "$line" == 'bind-key "'* ]]; then
-    printf 'bind-key -T "%s" %s\n' "$table" "${line#bind-key }"
-  elif [[ -n "$line" && "$line" != \#* ]]; then
-    printf 'tmux-popups: unexpected generated config command\n' >&2
-    exit 1
-  fi
-done <"$scratch/input" >"$scratch/stage"
-tmux source-file "$scratch/stage"
 
 option() { tmux show-option -gqv "$1"; }
 q() {
@@ -52,6 +46,21 @@ q() {
   value=${value//$'\t'/\\t}
   printf '"%s"' "$value"
 }
+# Execute bind commands only in a disposable table. This validates keys and
+# commands without running their actions or changing any effective user key.
+source="generated config $config"
+while IFS= read -r line; do
+  if [[ "$line" == '# Binding: '* ]]; then
+    source="${line#\# Binding: }"
+  elif [[ "$line" == 'bind-key "'* ]]; then
+    printf 'bind-key -T "%s" -N %s %s\n' "$table" "$(q "$source")" "${line#bind-key }"
+  elif [[ -n "$line" && "$line" != \#* ]]; then
+    printf 'tmux-popups: unexpected generated config command\n' >&2
+    exit 1
+  fi
+done <"$scratch/input" >"$scratch/stage"
+tmux source-file "$scratch/stage"
+
 # Newer tmux exposes raw binding fields, including notes, through -F.
 # Use a private delimiter so multiline notes remain literal data.
 read_modern_table() {
@@ -64,6 +73,7 @@ read_modern_table() {
     return 1
   fi
   snapshot=()
+  snapshot_notes=()
   while [[ -n "$dump" ]]; do
     fields=()
     for field in key repeat note command; do
@@ -73,6 +83,7 @@ read_modern_table() {
     done
     key="$(q "${fields[0]}")"; repeat="${fields[1]}"; note="${fields[2]}"; command="${fields[3]}"
     [[ "$repeat" == 0 || "$repeat" == 1 ]] || return 1
+    snapshot_notes["$key"]="$note"
     snapshot["$key"]="bind-key -T prefix -N $(q "$note") $key $command"
     if [[ "$repeat" == 1 ]]; then snapshot["$key"]="bind-key -r -T prefix -N $(q "$note") $key $command"; fi
     dump="${dump#$'\n'}"
@@ -89,6 +100,7 @@ read_table() {
   local pattern='^bind-key[[:space:]]+(-r[[:space:]]+)?-T[[:space:]]+([^[:space:]]+)[[:space:]]+([^[:space:]]+)[[:space:]]+(.*)$'
   tmux list-keys >"$scratch/lines"
   snapshot=()
+  snapshot_notes=()
   while IFS= read -r line; do
     [[ "$line" =~ $pattern ]] || { printf 'tmux-popups: invalid key snapshot\n' >&2; return 1; }
     repeat="${BASH_REMATCH[1]}"; source_table="${BASH_REMATCH[2]}"
@@ -109,14 +121,18 @@ read_table() {
     note="$(tmux list-keys -N -T "$name" -- "$lookup" 2>/dev/null || true; printf '.')"
     note="${note%.}"; note="${note%$'\n'}"
     [[ -z "$note" ]] || note="${note#* }"
+    snapshot_notes["$key"]="$note"
     snapshot["$key"]="bind-key ${repeat:+-r }-T prefix -N $(q "$note") $key $command"
   done <"$scratch/lines"
 }
-declare -A snapshot=() current=() wanted=() previous=() installed=() protected=() touched=()
+declare -A snapshot_notes=() origins=() snapshot=() current=() wanted=() previous=() installed=() protected=() touched=()
 read_table "$table"
 ((${#snapshot[@]} > 0)) || { printf 'tmux-popups: no generated bindings\n' >&2; exit 1; }
 # Use canonical key names from tmux, so aliases and duplicate slots reconcile.
-for key in "${!snapshot[@]}"; do wanted["$key"]="${snapshot[$key]}"; done
+for key in "${!snapshot[@]}"; do
+  wanted["$key"]="${snapshot[$key]}"
+  origins["$key"]="${snapshot_notes[$key]}"
+done
 read_table prefix
 for key in "${!snapshot[@]}"; do current["$key"]="${snapshot[$key]}"; done
 
@@ -154,6 +170,23 @@ index=0
 printf '%s\n' "${!wanted[@]}" | LC_ALL=C sort >"$scratch/order"
 while IFS= read -r key; do
   if [[ ! -v previous["$key"] ]]; then previous["$key"]="${current[$key]:-}"; fi
+  action=install
+  if [[ -v protected["$key"] ]]; then
+    action='preserve later user change'
+  elif [[ ! -v installed["$key"] && -n "${current[$key]:-}" ]]; then
+    action="$policy conflict"
+    if [[ "$explain" == yes || "$policy" != replace ]]; then
+      printf 'tmux-popups: %s: key %s from %s; previous: %s\n' \
+        "$action" "$key" "${origins[$key]}" "${current[$key]}" >&2
+    fi
+    if [[ "$policy" == skip ]]; then
+      continue
+    fi
+  fi
+  if [[ "$explain" == yes ]]; then
+    printf 'key %s: %s; source: %s; effective: %s\n' \
+      "$key" "$action" "${origins[$key]}" "${current[$key]:-unbound}"
+  fi
   if [[ ! -v protected["$key"] ]]; then
     touched["$key"]=yes
     printf '%s\n' "${wanted[$key]}" >>"$scratch/plan"
@@ -189,6 +222,7 @@ done
 cat "$scratch/rollback-state" >>"$scratch/rollback"
 tmux source-file -n "$scratch/plan"
 tmux source-file -n "$scratch/rollback"
+if [[ "$explain" == yes ]]; then exit 0; fi
 applying=yes
 tmux source-file "$scratch/plan"
 applying=no

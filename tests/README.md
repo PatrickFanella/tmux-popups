@@ -93,3 +93,10 @@ a disposable plugin installation before reloading. User script and registry
 bytes must survive that replacement. Legacy output layouts and seven/eight/nine/
 eleven-column rows retain their behavior. These synthetic PTY checks leave the
 actual terminal/tool/provider gates in #12/#24 and owner release gate in #25 open.
+
+Conflict checks preinstall user bindings for entries, the quick menu and reload.
+They cover skip/warn/replace, registry-line provenance, read-only explanations,
+invalid policy rejection, reserved menu collisions, later user changes and
+restoration. Existing launcher fixtures explicitly select `replace` to retain
+their earlier binding setup. Public TSV layouts remain unchanged; `--origin-tsv`
+adds the effective registry location to the execution layout.

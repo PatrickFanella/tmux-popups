@@ -57,6 +57,7 @@ class LauncherTests(unittest.TestCase):
         self.owned_cleanup(lambda: self.tmux("kill-server", check=False))
         self.tmux("set-option", "-g", "@tmux-popups-enable-vscode", "off")
         self.tmux("set-option", "-g", "assume-paste-time", "0")
+        self.tmux("set-option", "-g", "@tmux-popups-conflicts", "replace")
         self.tmux("set-option", "-g", "@tmux-popups-profile", "full")
         self.tmux("set-option", "-g", "@tmux-popups-availability", "ignore")
 
