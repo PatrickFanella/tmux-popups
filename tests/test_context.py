@@ -82,12 +82,9 @@ class ContextTests(unittest.TestCase):
                 self.tmux("respawn-pane", "-k", "-t", origins[session]["PANE"],
                           "-c", str(directory).replace("#", "##"),
                           "printf 'fixture-ready\\n'; exec /bin/bash --noprofile --norc")
-                # Remove only tmux's output terminator, never path whitespace.
-                actual = subprocess.run([launcher.REAL_TMUX, "-S", str(self.socket),
-                                         "display-message", "-p", "-t", origins[session]["PANE"],
-                                         "#{pane_current_path}"], env=self.env, capture_output=True,
-                                        check=True, timeout=12).stdout.decode()
-                self.assertEqual(actual, str(directory) + "\n")
+                # display-message output may escape CR on newer tmux. The
+                # dispatched adapter below checks the actual cwd and complete
+                # origin contract byte-for-byte, independent of CLI rendering.
                 origins[session]["DIRECTORY"] = str(directory)
             for mode in ("window", "popup"):
                 self.tmux("set-option", "-g", "@tmux-popups-yazi-mode", mode)
