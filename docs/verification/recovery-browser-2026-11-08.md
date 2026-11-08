@@ -27,3 +27,19 @@ The browser tab, ttyd process and private tmux server were stopped after the che
 `scripts/check.sh`: syntax checks, ShellCheck and all 130 tests passed in 306.837 seconds. The runner timeout is 360 seconds.
 
 Phone qualification remains inconclusive; see [the recorded emulator attempt](phone-2026-11-08.md). No additional phone attempt was made for this change.
+
+## CI interrupt follow-up
+
+Candidate `b3bb4f6588a5d02eb1720b909a4664b903ddbceb` removes the intermediate
+command shell with `exec` for normal and retained launches, including fresh-window
+fallback. On the earlier head `0e34c7273cadce29a9e4dbed84e44cf41c2f0eb0`,
+[hosted job 37776](https://git.subcult.tv/PatrickFanella/tmux-popups/actions/runs/20362/jobs/37776)
+failed the raw-terminal Ctrl-C check: the recovery wrapper's trace showed its
+INT trap and exit 130, but the outer command reported 2. The same failure reproduced
+in a private `node:24-bookworm-slim` container with Bash 5.2.15, tmux 3.3a and
+Python 3.11.2. Replacing the intermediate shell resolved that reproducer.
+
+All 14 recovery tests passed on the repaired code in that container (8.863 seconds)
+and on Dozor's tmux 3.5a/Bash 5.2.37 (11.133 seconds). Syntax and the project's
+ShellCheck command also passed. This focused check does not substitute for the
+hosted full suite on the new PR head.
