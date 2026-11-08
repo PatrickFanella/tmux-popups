@@ -644,9 +644,14 @@ tools use the invoking directory; Git status reports Git's normal non-repository
 error. The original `TMUX_POPUPS_DIRECTORY` remains the invoking directory even
 when the adapter changes its working directory to the project root.
 
-Project notes default to `NOTES.md` at that root. Set
-`TMUX_POPUPS_PROJECT_NOTES` to a relative path under the root or an absolute/home
-path. An explicit notes argument takes precedence, for example
+Project notes default to `NOTES.md` at that root. Configure a relative path
+under the root in your tmux configuration:
+
+```tmux
+set-environment -g TMUX_POPUPS_PROJECT_NOTES 'docs/project notes.md'
+```
+
+The value can also be an absolute path or a literal `~/` path. An explicit notes argument takes precedence, for example
 `["notes", "docs/project notes.md"]`. Listing, help and doctor never create the
 file or its parent directory. Selecting notes opens the configured editor and
 creates its parent directory only after an editor is available.

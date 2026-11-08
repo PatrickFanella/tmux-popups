@@ -129,3 +129,20 @@ class ProjectActionTests(unittest.TestCase):
         self.run_script("scripts/run-popup.sh", "project_code", "--launch", *context)
         self.assertEqual(self.tmux("list-windows", "-t", "fixture", "-F", "#{window_id}").stdout, before)
         self.assertEqual(self.record.stat().st_mtime_ns, modified)
+
+    def test_documented_notes_environment_reaches_selected_window(self):
+        registry = self.home / "notes-launch.tsv"
+        registry.write_text((launcher.ROOT / "examples/popups.project.tsv").read_text())
+        self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(registry))
+        self.tmux("set-environment", "-g", "TMUX_POPUPS_PROJECT_NOTES", "docs/project notes.md")
+        self.tmux("set-environment", "-g", "EDITOR", str(self.editor))
+        self.attach()
+        client = self.tmux("list-clients", "-F", "#{client_name}").stdout.strip()
+        ids = self.tmux("display-message", "-p", "-t", "fixture", "#{session_id}|#{window_id}|#{pane_id}").stdout.strip().split("|")
+        self.run_script("scripts/run-popup.sh", "project_notes", "--launch", client, *ids, str(self.nested),
+                        env=dict(self.env, EDITOR=str(self.editor)))
+        note = self.repo / "docs/project notes.md"
+        self.wait_until(note.exists)
+        self.assertEqual(note.read_text(), "selected notes\n")
+        self.assertEqual(json.loads(self.record.read_text()),
+                         dict(cwd=str(self.repo), args=[str(note)], origin=str(self.nested)))
