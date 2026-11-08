@@ -106,3 +106,9 @@ closed windows, exact literal directory scopes, independent sessions, simultaneo
 launches, exited remain-on-exit panes, fast tool completion, default-off behavior
 and invalid option/mode combinations. All windows and substitute processes live
 on private tmux servers. Actual terminal/tool qualification remains in #12/#24.
+
+Interactive fixture shells set `HISTFILE=/dev/null`. The tmux server-stop command
+can overlap shell shutdown, so history must not create files while the disposable
+home is being removed. A regression explicitly flushes interactive history and
+asserts that no home history file appears. This keeps cleanup failures visible
+instead of masking them with deletion retries.
