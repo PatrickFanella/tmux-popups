@@ -91,3 +91,18 @@ but exposed the status-129 quit defect later repaired and retested above.
 Do not treat this matrix as evidence for every terminal or provider. Preserve the
 remaining gates rather than closing #12/#24 on syntax, controlled PTYs or browser
 input alone. No tag, release or user installation change was made.
+
+## Hosted candidate evidence
+
+[Run 20398, job 37862](https://git.subcult.tv/PatrickFanella/tmux-popups/actions/runs/20398/jobs/37862)
+passed on candidate `94294cf89513c4023cc304a36849fc8f801f1995`: 134 tests in
+142.459 seconds, with the optional real-fzf check skipped because fzf is absent
+from that runner. Dozor's full run includes real fzf and passes all 134 tests.
+
+PR #54's earlier hosted run had one window-exit wait time out. Its dispatcher and
+mode test match the later successful 133/134-test heads. Eight isolated,
+instrumented repetitions on that earlier head passed (91.229 seconds). The
+cause remains unreproduced. Pane/dead-status/signal/frame diagnostics were added in
+`15612a2` without weakening the expected exit-23 assertion. The instrumented local
+mode case passes (14.812 seconds); the new head still must pass hosted CI. This is a test reliability limit, not evidence of a repaired
+application defect.

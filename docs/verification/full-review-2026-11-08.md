@@ -63,3 +63,18 @@ All browser tabs, ttyd processes and private tmux servers started for the UI
 checks were stopped. Temporary binaries and the private verification image were
 used only for isolated checks. No production process, user's tmux server,
 installation, tag, release or mirror configuration was changed.
+
+## Hosted candidate evidence
+
+[Run 20398, job 37862](https://git.subcult.tv/PatrickFanella/tmux-popups/actions/runs/20398/jobs/37862)
+passed on candidate `94294cf89513c4023cc304a36849fc8f801f1995`: 134 tests in
+142.459 seconds, with the optional real-fzf check skipped because fzf is absent
+from that runner. Dozor's full run includes real fzf and passes all 134 tests.
+
+PR #54's earlier hosted run had one window-exit wait time out. Its dispatcher and
+mode test match the later successful 133/134-test heads. Eight isolated,
+instrumented repetitions on that earlier head passed (91.229 seconds). The
+cause remains unreproduced. Pane/dead-status/signal/frame diagnostics were added in
+`15612a2` without weakening the expected exit-23 assertion. The instrumented local
+mode case passes (14.812 seconds); the new head still must pass hosted CI. This is a test reliability limit, not evidence of a repaired
+application defect.
