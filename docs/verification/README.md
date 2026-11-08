@@ -12,6 +12,10 @@ cases and commit recorded. The final integrated qualification remains tracked in
 | [Project actions](project-actions-2026-11-08.md) | Real Git/Bash checks, substitutes for editor/coding tools, and actual browser-terminal shell input. |
 | [Failure recovery](recovery-browser-2026-11-08.md) | Actual browser-terminal application input, retry, fresh window, close and process/context checks. |
 | [Migration](migration-2026-11-08.md) | Isolated manual install, custom script, example registries, reload and saved-revision return. |
+| [Final terminal matrix](terminal-matrix-2026-11-08.md) | Real Yazi/OpenCode input in both modes and two actual browser clients on the final code candidate, plus explicit limits. |
+| [Chat lifecycle review](chat-review-2026-11-08.md) | Normal dispatcher quit/copy-quit, bounded owned-group cleanup and actual browser retest. |
+| [Hash-path review](hash-path-review-2026-11-08.md) | Explicit-mode direct/menu quoting and retained-close regression on both tested tmux versions. |
+| [Full code review](full-review-2026-11-08.md) | Capability evidence, repaired findings, local full-suite result and remaining readiness gates. |
 | [Phone attempt](phone-2026-11-08.md) | Inconclusive Android emulator attempt after device-control reference errors. |
 
 The browser terminal is Chromium attached through ttyd to an isolated tmux
@@ -20,3 +24,6 @@ not establish behavior in the owner's original native terminal, a real Yazi or
 OpenCode session, or a real provider. Those integrations remain optional and
 unqualified until their own evidence is recorded. No record authorizes tags,
 releases or a change to the user's installation under issue #25.
+
+See the [release review packet](../release-review-2026-11-08.md) for proposed
+notes, migration/rollback links, canonical/mirror ownership and the open approval gate.
