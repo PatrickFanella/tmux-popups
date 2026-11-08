@@ -113,3 +113,16 @@ registry/environment precedence, disabled/unavailable entries, temporary output
 and bad CLI arguments. An explicit attached-popup input check receives exact
 sample bytes and exits on its deadline. This automated input evidence remains
 separate from a real terminal/application qualification.
+
+Chat checks use provider and clipboard substitutes for valid/malformed/empty
+responses, session continuation, missing dependencies, provider/copy failures,
+quit controls and interruption. Attached-popup typing, copying and Ctrl-C check
+owned request/process and temporary-file cleanup. Ctrl-C cancels the owned
+request and closes chat; it does not consume quit/copy controls as application
+input. Real ocq/provider qualification remains separate in #12/#24.
+
+Interactive fixture shells set `HISTFILE=/dev/null`. The tmux server-stop command
+can overlap shell shutdown, so history must not create files while the disposable
+home is being removed. A regression explicitly flushes interactive history and
+asserts that no home history file appears. This keeps cleanup failures visible
+instead of masking them with deletion retries.
