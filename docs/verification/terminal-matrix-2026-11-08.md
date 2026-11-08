@@ -117,3 +117,17 @@ Runtime main `6030555b528e9660bbbda876133c5f2238aa1961` has byte-identical
 `94294cf89513c4023cc304a36849fc8f801f1995`. The only difference before this packet
 is the added mode-test timeout diagnostics. This packet includes those diagnostics;
 its own head remains subject to the normal full hosted gate before merge.
+
+## Tracker dependency gate
+
+Gitea refused to close implementation-complete #15 while #12 remained open:
+`cannot close this issue or pull request because it still has open dependencies`.
+#19 also depends on #12, #20 on #19, and #23 on those feature issues. Their
+acceptance checkboxes and evidence are recorded, but they remain open under the
+existing dependency graph. No dependency was removed or bypassed.
+
+The browser terminal is a real qualified target for the recorded cases. The
+mandatory #12 input matrix remains incomplete, particularly actual OS clipboard
+paste; literal browser text insertion is not claimed as that check. The original
+native terminal would help reproduce the historical report, but is not a new
+permission requirement imposed by this review. Phone control remains inconclusive.
