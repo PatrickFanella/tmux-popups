@@ -1,13 +1,13 @@
 {
   "source_repository": "subculture-collective/subcult-tv",
-  "source_revision": "e2bc671b756ff8d09bc2b26c5b927d46d2df36d1",
+  "source_revision": "f69b93c299216425dadb6f5c6117d24c2e36388d",
   "direction": "Instrument Panel",
   "selected_by": "owner on 2026-11-08",
   "typography": {
     "display": "IBM Plex Sans Condensed 700",
     "body": "IBM Plex Sans 400",
     "commands": "IBM Plex Mono 400",
-    "selection": "Agent-selected after the owner requested different fonts and ui-craft."
+    "selection": "Owner confirmed IBM Plex after the requested ui-craft comparison on 2026-11-08."
   },
   "files": [
     {
