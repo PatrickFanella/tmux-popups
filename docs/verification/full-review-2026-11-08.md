@@ -76,5 +76,16 @@ mode test match the later successful 133/134-test heads. Eight isolated,
 instrumented repetitions on that earlier head passed (91.229 seconds). The
 cause remains unreproduced. Pane/dead-status/signal/frame diagnostics were added in
 `15612a2` without weakening the expected exit-23 assertion. The instrumented local
-mode case passes (14.812 seconds); the new head still must pass hosted CI. This is a test reliability limit, not evidence of a repaired
-application defect.
+case passed (14.812 seconds). [Run 20407, job 37895](https://git.subcult.tv/PatrickFanella/tmux-popups/actions/runs/20407/jobs/37895)
+then passed on that head: 131 tests in 101.788 seconds, with optional real fzf
+skipped. PR #54 merged after this green rerun. The one-off remains a test
+reliability limit, not evidence of a repaired application defect.
+
+## Integrated runtime revision
+
+PRs #54, #58 and #59 merged after their current heads passed hosted checks.
+Runtime main `6030555b528e9660bbbda876133c5f2238aa1961` has byte-identical
+`scripts`, `popups.tsv`, `examples` and CI workflows to candidate
+`94294cf89513c4023cc304a36849fc8f801f1995`. The only difference before this packet
+is the added mode-test timeout diagnostics. This packet includes those diagnostics;
+its own head remains subject to the normal full hosted gate before merge.

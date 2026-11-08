@@ -48,9 +48,11 @@ and mirror health for an actually approved publication revision.
 
 ## Remaining release gates
 
-1. Finish green hosted checks and clean merges for every dependent PR. Name the
-   resulting exact main revision and compare its implementation tree with the
-   qualified candidate.
+1. Recheck the resulting exact main revision and hosted evidence for any proposed
+   publication. Runtime changes reached `6030555b528e9660bbbda876133c5f2238aa1961`
+   after green head checks and clean merges. Its scripts, registry, examples and
+   CI workflows match the qualified candidate. The packet itself follows the
+   same green-head check before its authorized merge.
 2. Complete #12/#24 evidence in the owner's original native terminal, including
    the historical failing interaction and OS paste path. Keep real providers and
    clipboard/image backends optional and unqualified until separately tested.
