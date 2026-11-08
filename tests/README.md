@@ -2,7 +2,7 @@
 
 Run `scripts/check.sh` from the repository checkout. It runs Bash syntax,
 ShellCheck with the existing project exclusions, and `tests/run.sh`. The test
-command requires Python 3, tmux and GNU timeout. It has a 360-second bound.
+command requires Python 3, Git, tmux and GNU timeout. It has a 360-second bound.
 
 Each test starts a separate tmux server on a private socket, creates a disposable
 home and XDG directories, and removes its clients and server before deleting
@@ -133,3 +133,10 @@ can overlap shell shutdown, so history must not create files while the disposabl
 home is being removed. A regression explicitly flushes interactive history and
 asserts that no home history file appears. This keeps cleanup failures visible
 instead of masking them with deletion retries.
+
+Project-action checks use real Git/Bash plus temporary editor/coding-tool
+substitutes in repository roots, nested paths and non-repositories. They cover
+space/apostrophe/control-byte paths, literal argument boundaries, configurable
+notes and no note creation during discovery, missing tools, and registry dispatch
+with window reuse. Git is required by the verification harness; provider tools
+remain optional and are not contacted by these tests.

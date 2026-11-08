@@ -630,6 +630,49 @@ server-serialized transaction described above.
 The configurable vscode menu command runs through `run-shell` with a shell-quoted
 pane directory, including on tmux 3.3a. It retains shell command semantics.
 
+### Add project-aware actions
+
+Copy selected rows from `examples/popups.project.tsv` into your local registry
+and reload through `tmux-popups.tmux`. The examples provide Git status, a shell,
+project notes and OpenCode. They use explicit JSON arguments and declare their
+optional dependencies. No provider account or background service is required by
+the adapters.
+
+The shell stays in the exact invoking directory. Git, notes and coding tools use
+the containing Git repository's root. Outside a repository, notes and coding
+tools use the invoking directory; Git status reports Git's normal non-repository
+error. The original `TMUX_POPUPS_DIRECTORY` remains the invoking directory even
+when the adapter changes its working directory to the project root.
+
+Project notes default to `NOTES.md` at that root. Configure a relative path
+under the root in your tmux configuration:
+
+```tmux
+set-environment -g TMUX_POPUPS_PROJECT_NOTES 'docs/project notes.md'
+```
+
+The value can also be an absolute path or a literal `~/` path. An explicit notes argument takes precedence, for example
+`["notes", "docs/project notes.md"]`. Listing, help and doctor never create the
+file or its parent directory. Selecting notes opens the configured editor and
+creates its parent directory only after an editor is available.
+
+The coding example uses `["code", "opencode"]`. To use another installed tool,
+change the binary, dependency field and argument array together, for example
+`["code", "nvim", "."]` with dependencies `nvim`. Arguments stay
+separate; shell expressions are not evaluated.
+
+To reuse a project coding window, set:
+
+```tmux
+set -g @tmux-popups-project_code-reuse 'directory'
+```
+
+This reuses by the exact invoking directory under the existing reuse contract.
+Different nested directories in the same Git repository still get separate
+windows, even though their adapters start at the same repository root. The
+example shell remains in its invoking directory and can use the same reuse
+setting under `@tmux-popups-project_shell-reuse`.
+
 ### Add a searchable launcher
 
 Copy the `search` row from `examples/popups.optional.tsv` into your local
