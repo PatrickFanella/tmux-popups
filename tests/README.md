@@ -93,3 +93,10 @@ a disposable plugin installation before reloading. User script and registry
 bytes must survive that replacement. Legacy output layouts and seven/eight/nine/
 eleven-column rows retain their behavior. These synthetic PTY checks leave the
 actual terminal/tool/provider gates in #12/#24 and owner release gate in #25 open.
+
+Chat checks use provider and clipboard substitutes for valid/malformed/empty
+responses, session continuation, missing dependencies, provider/copy failures,
+quit controls and interruption. Attached-popup typing, copying and Ctrl-C check
+owned request/process and temporary-file cleanup. Ctrl-C cancels the owned
+request and closes chat; it does not consume quit/copy controls as application
+input. Real ocq/provider qualification remains separate in #12/#24.
