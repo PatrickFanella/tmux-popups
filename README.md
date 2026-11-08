@@ -650,3 +650,12 @@ contract through its environment. Without it, the CLI uses `TMUX_PANE` for pane,
 session and window IDs and `$PWD` for the directory, leaving the client unset.
 Client actions then cancel. Calls outside tmux can still run ordinary adapters.
 This contract applies to popup, window and command launch modes.
+
+## Chat failure and cancellation behavior
+
+The optional chat adapter requires `ocq` and Node.js. Invalid, empty or failed
+responses leave the last valid session intact and return to the prompt with a
+short error. Clipboard failures keep chat open. `q` and `/quit` close chat at an
+input prompt; Ctrl-C cancels its request process group and closes chat while
+waiting. Copy preserves response bytes, including trailing newlines. Automated
+provider substitutes do not establish compatibility with a real provider.

@@ -107,6 +107,13 @@ launches, exited remain-on-exit panes, fast tool completion, default-off behavio
 and invalid option/mode combinations. All windows and substitute processes live
 on private tmux servers. Actual terminal/tool qualification remains in #12/#24.
 
+Chat checks use provider and clipboard substitutes for valid/malformed/empty
+responses, session continuation, missing dependencies, provider/copy failures,
+quit controls and interruption. Attached-popup typing, copying and Ctrl-C check
+owned request/process and temporary-file cleanup. Ctrl-C cancels the owned
+request and closes chat; it does not consume quit/copy controls as application
+input. Real ocq/provider qualification remains separate in #12/#24.
+
 Interactive fixture shells set `HISTFILE=/dev/null`. The tmux server-stop command
 can overlap shell shutdown, so history must not create files while the disposable
 home is being removed. A regression explicitly flushes interactive history and
