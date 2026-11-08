@@ -100,3 +100,9 @@ invalid policy rejection, reserved menu collisions, later user changes and
 restoration. Existing launcher fixtures explicitly select `replace` to retain
 their earlier binding setup. Public TSV layouts remain unchanged; `--origin-tsv`
 adds the effective registry location to the execution layout.
+
+Window-reuse checks cover repeated launches, renamed and same-title user windows,
+closed windows, exact literal directory scopes, independent sessions, simultaneous
+launches, exited remain-on-exit panes, fast tool completion, default-off behavior
+and invalid option/mode combinations. All windows and substitute processes live
+on private tmux servers. Actual terminal/tool qualification remains in #12/#24.

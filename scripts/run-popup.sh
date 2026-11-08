@@ -42,6 +42,8 @@ if [[ -n "$row" ]]; then
     exit 127
   fi
 
+  reuse="$(window_reuse_policy "$id" "$mode")"
+
   resolve_execution "$command" "$kind" "$arguments" "popup $id"
 
   if [[ "$mode" == command ]]; then
@@ -66,6 +68,9 @@ if [[ -n "$row" ]]; then
     launch_directory=${TMUX_POPUPS_DIRECTORY//#/##}
     case "$mode" in
       window)
+        if [[ "$reuse" != off ]]; then
+          exec "$root/scripts/reuse-window.sh" "$id" "$reuse" "$_title" "$launch_command"
+        fi
         exec tmux new-window -t "$TMUX_POPUPS_SESSION:" -c "$launch_directory" \
           "${launch_environment[@]}" -n "$_title" "$launch_command" ;;
     esac
