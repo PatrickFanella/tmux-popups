@@ -20,6 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install verification tools
-        run: apt-get update && apt-get install -y --no-install-recommends python3 shellcheck tmux
+        run: apt-get update && apt-get install -y --no-install-recommends git python3 shellcheck tmux
       - name: Syntax, ShellCheck and isolated launcher regressions
         run: scripts/check.sh

@@ -1,0 +1,6 @@
+# Optional project actions. Copy selected rows into popups.local.tsv and reload.
+# IDs and menu keys are distinct from the shipped tools. Arguments are JSON data.
+project_git	-	1	project Git status	90%	85%	scripts/tools/project-action.sh	command	foreground	on	git	plugin	["git"]
+project_shell	-	2	shell here	90%	85%	scripts/tools/project-action.sh	window	foreground	on	shell	plugin	["shell"]
+project_notes	-	3	project notes	90%	85%	scripts/tools/project-action.sh	window	foreground	on	editor	plugin	["notes"]
+project_code	-	4	project OpenCode	90%	85%	scripts/tools/project-action.sh	window	foreground	on	opencode	plugin	["code","opencode"]
