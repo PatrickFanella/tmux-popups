@@ -85,7 +85,7 @@ while true; do
           environment+=(-e "$name=${!name}")
         done
         executable=${root//\'/\'\\\'\'}
-        command="'$executable/scripts/recover-entry.sh' $id $policy window"
+        command="exec '$executable/scripts/recover-entry.sh' $id $policy window"
         directory=${TMUX_POPUPS_DIRECTORY//#/##}
         tmux new-window -t "$TMUX_POPUPS_SESSION:" -c "$directory" \
           "${environment[@]}" -n "$id" "$command" || exit 1
