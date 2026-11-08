@@ -34,7 +34,7 @@ while IFS= read -r window; do
     [[ "$(tmux show-option -w -t "$window" -qv @tmux-popups-directory)" == "$directory" ]] || continue
   fi
   pane="$(tmux show-option -w -t "$window" -qv @tmux-popups-tool-pane 2>/dev/null || true)"
-  if [[ -n "$pane" && "$(tmux display-message -p -t "$pane" '#{pane_dead}' 2>/dev/null || true)" == 0 ]]; then
+  if [[ -n "$pane" && "$(tmux display-message -p -t "$pane" '#{window_id} #{pane_dead}' 2>/dev/null || true)" == "$window 0" ]]; then
     tmux select-window -t "$window"
     exit 0
   fi

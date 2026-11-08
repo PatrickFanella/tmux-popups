@@ -789,7 +789,9 @@ pane. Renaming a tool window does not break reuse, and an unrelated window with
 the same title is never adopted. Concurrent launches of an entry are serialized
 within its invoking session. Closed windows are recreated. If a tool exits in
 a `remain-on-exit` window, the old pane stays available for inspection and the
-next launch creates a new tool window.
+next launch creates a new tool window. Moving the marked tool pane to another
+window also retires the original window's reuse marker; the moved pane and any
+user panes stay untouched.
 
 A reused process keeps its original launch environment and working directory.
 The origin helpers still reject a vanished client or pane. Reuse follows tmux's
