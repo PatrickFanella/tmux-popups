@@ -53,11 +53,10 @@ and mirror health for an actually approved publication revision.
    after green head checks and clean merges. Its scripts, registry, examples and
    CI workflows match the qualified candidate. The packet itself follows the
    same green-head check before its authorized merge.
-2. Complete the remaining #12/#24 input matrix, particularly actual clipboard
-   paste, through an accessible terminal/client route. The original native
-   environment and historical trigger remain unavailable for comparison; the
-   browser terminal already has the narrower qualification recorded above. Keep
-   providers and clipboard/image backends optional and unqualified until tested.
+2. Record #12/#24 qualification closure for the stated browser target after this
+   evidence PR passes and merges. [Actual paste](verification/paste-browser-2026-11-08.md)
+   now passes in all six applications and both modes. Original native-terminal,
+   provider and clipboard/image backend coverage remains explicitly unqualified.
 3. Resolve the phone qualification gap if that environment is required. The
    attempted emulator check stopped on device-control errors, as recorded.
 4. Obtain explicit approval under #25 for a concrete revision and destination
@@ -67,6 +66,6 @@ and mirror health for an actually approved publication revision.
 This packet prepares the review material. It does not close #12, #24 or #25, and
 passing CI or merging this document does not grant release approval.
 
-Gitea enforces the open #12 dependency before closing the implementation-complete
-feature issues #15/#19/#20/#23. Their completed acceptance evidence is recorded;
-they remain open rather than bypassing the existing graph.
+Gitea enforces #12 before closing the implementation-complete feature issues
+#15/#19/#20/#23. The completed paste evidence allows that graph to resolve in
+order after its evidence PR passes and merges. No dependency is bypassed.

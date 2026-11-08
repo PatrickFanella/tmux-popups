@@ -1,7 +1,8 @@
 # Terminal qualification matrix — 2026-11-08
 
-Verdict: the recorded browser-terminal cases pass. Native-terminal and phone
-qualification remain incomplete, so issues #12 and #24 stay open.
+Verdict: the recorded browser-terminal and actual clipboard-paste cases pass.
+Qualification applies to this stated target; other native terminals and the
+phone remain unqualified. See the follow-up paste matrix below.
 
 ## Candidate and environment
 
@@ -82,15 +83,16 @@ but exposed the status-129 quit defect later repaired and retested above.
 | --- | --- |
 | Owner's original native terminal and historical failure interaction | NOT TESTED: terminal identity, version, configuration and original reproducer are unavailable in this session. The general remembered input failure remains unreproduced there. |
 | Android phone emulator | INCONCLUSIVE: [the recorded attempt](phone-2026-11-08.md) stopped after two device-control reference failures. The owned emulator and forwarding process were stopped. |
-| OS clipboard paste and bracketed paste in the original terminal | NOT TESTED: browser literal-text input and synthetic PTY bytes do not establish the OS clipboard path. |
+| Browser clipboard paste | PASS: actual keyboard copy/paste into Bash, chat, calculator, Yazi, OpenCode and fzf in both modes; see [paste evidence](paste-browser-2026-11-08.md). A different native terminal remains untested. |
 | Real ocq/provider authentication, requests and continuation | NOT TESTED: optional and unqualified. No credentials or paid/provider calls were used. |
 | Real system clipboard, image previews and full Yazi user configuration | NOT TESTED: optional integrations require their own environment evidence. |
 | Integrated runtime main | INTEGRATED at `6030555b528e9660bbbda876133c5f2238aa1961`; implementation matches the qualified candidate. Each runtime PR merged after its current head passed hosted checks. |
 | Tag, release or user installation update | NOT AUTHORIZED: publication requires the separate release decision in #25. |
 
-Do not treat this matrix as evidence for every terminal or provider. Preserve the
-remaining gates rather than closing #12/#24 on syntax, controlled PTYs or browser
-input alone. No tag, release or user installation change was made.
+Do not treat this matrix as evidence for every terminal or provider. The browser
+target is qualified by local/hosted regressions, real applications, two clients
+and the [actual clipboard follow-up](paste-browser-2026-11-08.md). No tag, release
+or user installation change was made; #25 keeps its separate approval gate.
 
 ## Hosted candidate evidence
 
@@ -127,7 +129,23 @@ acceptance checkboxes and evidence are recorded, but they remain open under the
 existing dependency graph. No dependency was removed or bypassed.
 
 The browser terminal is a real qualified target for the recorded cases. The
-mandatory #12 input matrix remains incomplete, particularly actual OS clipboard
-paste; literal browser text insertion is not claimed as that check. The original
-native terminal would help reproduce the historical report, but is not a new
-permission requirement imposed by this review. Phone control remains inconclusive.
+paste gap was subsequently resolved by actual clipboard copy/paste in all six
+applications and both modes, as recorded in [the follow-up](paste-browser-2026-11-08.md).
+The dependency graph can resolve in order once that evidence PR passes and merges.
+The original native terminal remains unverified; it is not a new permission
+requirement imposed by this review. Phone control remains inconclusive.
+
+## Completed paste follow-up
+
+See [actual browser clipboard paste](paste-browser-2026-11-08.md) for twelve
+application/mode paste cases, cancellation, exact bytes and cleanup on runtime
+`6030555b528e9660bbbda876133c5f2238aa1961`. This closes the earlier paste evidence
+gap for the qualified browser target.
+
+## Runtime-main hosted result
+
+[Run 20412, job 37904](https://git.subcult.tv/PatrickFanella/tmux-popups/actions/runs/20412/jobs/37904)
+passed on runtime main `6030555b528e9660bbbda876133c5f2238aa1961`: 134 tests in
+319.033 seconds, with only optional real fzf skipped. The local full run includes
+fzf. This runtime includes the mode-timeout diagnostics as well as the reviewed
+implementation fixes.

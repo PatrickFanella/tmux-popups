@@ -59,3 +59,12 @@ OpenCode and other provider-backed tools need their own configuration. A
 substitute executable or passing CI does not establish authentication, network
 availability or real provider behavior. Keep real-provider checks separate from
 launcher and keyboard checks, and omit credentials from reports.
+
+## Check the client paste shortcut
+
+Use the paste binding for your terminal/client. The qualified Linux browser
+terminal used Control+Shift+V. Control+V is a terminal control key in some
+applications and is not evidence that clipboard paste reached the tool. The
+[recorded clipboard check](verification/paste-browser-2026-11-08.md) copied known
+text through the browser UI, verified it in a second field, then pasted it into
+each application. Other terminal families need their own shortcut/input check.

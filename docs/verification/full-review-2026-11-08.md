@@ -1,8 +1,9 @@
 # Final code and behavior review — 2026-11-08
 
 Verdict: the implemented launcher passes its 134-test local gate and the recorded
-browser-terminal checks after focused repairs. Hosted head checks and the native
-terminal/device qualification limits still block a release-ready verdict.
+browser-terminal and actual clipboard-paste checks after focused repairs. The
+qualified scope is the stated browser target. Publication still requires #25
+approval; other native terminals, phones and optional integrations remain unqualified.
 
 ## Scope and triage
 
@@ -56,7 +57,8 @@ a private CI-equivalent Node 24/Bash 5.2.15/tmux 3.3a/Python 3.11.2 container.
 The [terminal matrix](terminal-matrix-2026-11-08.md) records actual application
 input, two real clients, cleanup, exact versions and the discarded harness runs.
 The [phone attempt](phone-2026-11-08.md) remains inconclusive. The owner's original
-native terminal and OS paste path remain unavailable; optional providers and
+native terminal remains unverified. Actual clipboard paste on the browser target
+passes the follow-up matrix; optional providers and
 clipboard/image backends were not exercised against real services.
 
 All browser tabs, ttyd processes and private tmux servers started for the UI
@@ -99,7 +101,21 @@ acceptance checkboxes and evidence are recorded, but they remain open under the
 existing dependency graph. No dependency was removed or bypassed.
 
 The browser terminal is a real qualified target for the recorded cases. The
-mandatory #12 input matrix remains incomplete, particularly actual OS clipboard
-paste; literal browser text insertion is not claimed as that check. The original
-native terminal would help reproduce the historical report, but is not a new
-permission requirement imposed by this review. Phone control remains inconclusive.
+paste gap was subsequently resolved by actual clipboard copy/paste in all six
+applications and both modes, as recorded in [the follow-up](paste-browser-2026-11-08.md).
+The dependency graph can resolve in order once that evidence PR passes and merges.
+The original native terminal remains unverified; it is not a new permission
+requirement imposed by this review. Phone control remains inconclusive.
+
+The [paste follow-up](paste-browser-2026-11-08.md) records twelve actual clipboard
+cases and additional application cancellation/cleanup. The historical general
+input failure was not reproduced on this qualified target; no claim is made for
+the unavailable original environment.
+
+## Runtime-main hosted result
+
+[Run 20412, job 37904](https://git.subcult.tv/PatrickFanella/tmux-popups/actions/runs/20412/jobs/37904)
+passed on runtime main `6030555b528e9660bbbda876133c5f2238aa1961`: 134 tests in
+319.033 seconds, with only optional real fzf skipped. The local full run includes
+fzf. This runtime includes the mode-timeout diagnostics as well as the reviewed
+implementation fixes.

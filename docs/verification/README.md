@@ -16,14 +16,15 @@ cases and commit recorded. The final integrated qualification remains tracked in
 | [Chat lifecycle review](chat-review-2026-11-08.md) | Normal dispatcher quit/copy-quit, bounded owned-group cleanup and actual browser retest. |
 | [Hash-path review](hash-path-review-2026-11-08.md) | Explicit-mode direct/menu quoting and retained-close regression on both tested tmux versions. |
 | [Full code review](full-review-2026-11-08.md) | Capability evidence, repaired findings, local full-suite result and remaining readiness gates. |
+| [Actual clipboard paste](paste-browser-2026-11-08.md) | Browser keyboard copy/paste into all six applications in both modes, plus cancellation and exact-byte cleanup evidence. |
 | [Phone attempt](phone-2026-11-08.md) | Inconclusive Android emulator attempt after device-control reference errors. |
 
 The browser terminal is Chromium attached through ttyd to an isolated tmux
-server. It supplies actual keyboard/rendering evidence for those cases. It does
-not establish behavior in the owner's original native terminal, a real Yazi or
-OpenCode session, or a real provider. Those integrations remain optional and
-unqualified until their own evidence is recorded. No record authorizes tags,
-releases or a change to the user's installation under issue #25.
+server. The final matrix and paste follow-up qualify real Yazi/OpenCode UI and
+clipboard input for that stated target. Other native terminals, phone input,
+real providers, clipboard/image backends and full user configurations remain
+unqualified. No record authorizes tags, releases or a change to the user's
+installation under issue #25.
 
 See the [release review packet](../release-review-2026-11-08.md) for proposed
 notes, migration/rollback links, canonical/mirror ownership and the open approval gate.
