@@ -65,6 +65,28 @@ class ReuseTests(unittest.TestCase):
         self.assertNotEqual(self.owned(), [window])
         self.assertIn(user, self.windows())
 
+    def test_moved_tool_pane_does_not_reuse_its_previous_window(self):
+        self.launch()
+        self.wait_until(lambda: self.launches() == 1)
+        old = self.owned()[0]
+        tool = self.tmux("show-option", "-w", "-t", old, "-qv",
+                         "@tmux-popups-tool-pane").stdout.strip()
+        self.tmux("split-window", "-t", old,
+                  "exec /bin/bash --noprofile --norc")
+        user = self.tmux("new-window", "-P", "-F", "#{window_id}",
+                         "-t", "fixture:", "-n", "user window",
+                         "exec /bin/bash --noprofile --norc").stdout.strip()
+        self.tmux("join-pane", "-s", tool, "-t", user)
+        self.launch()
+        self.wait_until(lambda: self.launches() == 2)
+        self.assertNotIn(old, self.owned())
+        self.assertNotIn(user, self.owned())
+        self.assertEqual(len(self.owned()), 1)
+        self.assertIn(old, self.windows())
+        self.assertIn(user, self.windows())
+        self.assertEqual(self.tmux("display-message", "-p", "-t", tool,
+                                  "#{window_id}").stdout.strip(), user)
+
     def test_directory_scope_keeps_literal_paths_separate(self):
         self.tmux("set-option", "-g", "@tmux-popups-fixture-reuse", "directory")
         first = self.home / "project ' one\t\n"

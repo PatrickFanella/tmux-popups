@@ -87,8 +87,16 @@ class ModeTests(unittest.TestCase):
                     gate.touch()
                     if mode == "window":
                         created = next(window for window in after if window not in before)
-                        self.wait_until(lambda: self.tmux("display-message", "-p", "-t", created,
-                                                        "#{pane_dead_status}").stdout.strip() == "23")
+                        try:
+                            self.wait_until(lambda: self.tmux("display-message", "-p", "-t", created,
+                                                            "#{pane_dead_status}").stdout.strip() == "23")
+                        except AssertionError:
+                            state = self.tmux("list-panes", "-a", "-F",
+                                              "#{window_id} #{pane_id} dead=#{pane_dead} status=#{pane_dead_status} signal=#{pane_dead_signal}").stdout
+                            option = self.tmux("show-option", "-w", "-t", created,
+                                               "remain-on-exit", check=False).stdout
+                            frame = self.tmux("capture-pane", "-p", "-t", created, check=False).stdout
+                            self.fail(f"window {created} did not exit 23; {option}; panes={state}; frame={frame}")
                         self.tmux("kill-window", "-t", created)
                     else:
                         if completion != "background":
