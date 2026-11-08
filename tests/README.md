@@ -100,3 +100,10 @@ invalid policy rejection, reserved menu collisions, later user changes and
 restoration. Existing launcher fixtures explicitly select `replace` to retain
 their earlier binding setup. Public TSV layouts remain unchanged; `--origin-tsv`
 adds the effective registry location to the execution layout.
+
+Chat checks use provider and clipboard substitutes for valid/malformed/empty
+responses, session continuation, missing dependencies, provider/copy failures,
+quit controls and interruption. Attached-popup typing, copying and Ctrl-C check
+owned request/process and temporary-file cleanup. Ctrl-C cancels the owned
+request and closes chat; it does not consume quit/copy controls as application
+input. Real ocq/provider qualification remains separate in #12/#24.
