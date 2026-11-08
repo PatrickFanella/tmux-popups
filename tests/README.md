@@ -106,3 +106,10 @@ closed windows, exact literal directory scopes, independent sessions, simultaneo
 launches, exited remain-on-exit panes, fast tool completion, default-off behavior
 and invalid option/mode combinations. All windows and substitute processes live
 on private tmux servers. Actual terminal/tool qualification remains in #12/#24.
+
+Doctor checks compare cache/config bytes, effective bindings and ownership before
+and after defaults, overrides, invalid rows and conflict reports. They verify
+registry/environment precedence, disabled/unavailable entries, temporary output
+and bad CLI arguments. An explicit attached-popup input check receives exact
+sample bytes and exits on its deadline. This automated input evidence remains
+separate from a real terminal/application qualification.

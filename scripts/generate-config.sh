@@ -4,8 +4,12 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$root/scripts/lib.sh"
 registry="$root/popups.tsv"
-cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups"
-out="$cache_dir/generated.conf"
+out="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf"
+if (($#)); then
+  [[ $# == 2 && "$1" == --output && -n "$2" ]] || die 'usage: generate-config.sh [--output FILE]'
+  out="$2"
+fi
+cache_dir="$(dirname -- "$out")"
 mkdir -p "$cache_dir"
 # Each writer owns its file and validation tables. The last successful rename
 # wins; readers see either complete version, never an in-progress write.
