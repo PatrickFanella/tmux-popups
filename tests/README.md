@@ -2,7 +2,7 @@
 
 Run `scripts/check.sh` from the repository checkout. It runs Bash syntax,
 ShellCheck with the existing project exclusions, and `tests/run.sh`. The test
-command requires Python 3, tmux and GNU timeout. It has a 240-second bound.
+command requires Python 3, tmux and GNU timeout. It has a 360-second bound.
 
 Each test starts a separate tmux server on a private socket, creates a disposable
 home and XDG directories, and removes its clients and server before deleting
