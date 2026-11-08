@@ -312,3 +312,13 @@ resolve_execution() {
     execution_argv+=("$decoded")
   done <<<"$serialized"
 }
+
+binding_conflict_policy() {
+  local policy
+  policy="$(tmux show-option -gqv @tmux-popups-conflicts 2>/dev/null || true)"
+  policy="${policy:-skip}"
+  case "$policy" in
+    warn|skip|replace) printf '%s' "$policy" ;;
+    *) die "invalid binding conflict policy: $policy (use warn, skip or replace)" ;;
+  esac
+}

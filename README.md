@@ -89,12 +89,14 @@ To retain the previous full menu and direct keys, set these before loading:
 ```tmux
 set -g @tmux-popups-profile 'full'
 set -g @tmux-popups-availability 'ignore'
+set -g @tmux-popups-conflicts 'replace'
 ```
 
 `full` enables every shipped row. `ignore` retains the previous behavior of
 launching adapters even when their dependencies are missing. Leave availability
 at its default to show unavailable tools as disabled menu labels instead.
-Local rows and per-entry options still take precedence over the profile.
+The `replace` conflict policy restores the previous behavior of taking existing
+prefix keys. Local rows and per-entry options still take precedence over the profile.
 
 Enable an optional adapter without copying or deleting its row:
 
@@ -524,14 +526,48 @@ what the plugin installed. Other key tables are untouched.
 A user replacement or explicit unbind stays in effect across repeated reloads,
 even while that plugin key remains configured. Removing the key from the plugin
 configuration ends its ownership record. Configuring it again later starts a
-new record. New keys retain the existing overwrite behavior; conflict policy
-is tracked in #18. Bindings from versions that did not record ownership cannot
+new record. Bindings from versions that did not record ownership cannot
 be safely identified or restored automatically.
 
 Reload through `tmux-popups.tmux` so generation and reconciliation both run.
 The reconciler validates new bindings in a temporary key table before changing
 prefix keys, serializes reloads on the server, and rolls back touched keys and
 ownership state if applying the transition fails.
+
+
+### Binding conflicts and ownership
+
+`@tmux-popups-conflicts` controls a new plugin key that already has a binding:
+
+| Value | Behavior |
+| --- | --- |
+| `skip` (default) | Keep the existing binding and report the conflict. |
+| `warn` | Report the conflict, then replace the existing binding. |
+| `replace` | Replace the existing binding without a conflict warning. |
+
+Reports include the registry file, line and entry ID, or the built-in menu/reload
+name, followed by the previous binding. Skipped keys have no plugin ownership
+record. If you unbind one and reload, the plugin can take the now-free key.
+Owned keys update normally on reload. Later user replacements and explicit
+unbinds stay protected under every policy.
+
+To explain the effective bindings without applying changes, use the existing
+generated configuration:
+
+```sh
+scripts/apply-config.sh --explain "${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf"
+```
+
+The report shows each proposed key's source, effective binding and action.
+Installed bindings also carry source notes visible in `tmux list-keys -N`.
+Explanation uses disposable validation tables and leaves the cache, effective
+bindings and ownership unchanged. Reload through `tmux-popups.tmux` to apply
+settings. Sourcing `generated.conf` directly bypasses conflict and restoration
+policies.
+
+A duplicate shortcut within the plugin, including reserved menu `q`, `R` and
+optional `v`, remains a validation error under every policy. Change one of the
+registry shortcuts instead of relying on one entry to overwrite another.
 
 
 ### Registry validation and cache publication

@@ -2,7 +2,7 @@
 
 Run `scripts/check.sh` from the repository checkout. It runs Bash syntax,
 ShellCheck with the existing project exclusions, and `tests/run.sh`. The test
-command requires Python 3, tmux and GNU timeout. It has a 240-second bound.
+command requires Python 3, tmux and GNU timeout. It has a 360-second bound.
 
 Each test starts a separate tmux server on a private socket, creates a disposable
 home and XDG directories, and removes its clients and server before deleting
@@ -94,9 +94,22 @@ bytes must survive that replacement. Legacy output layouts and seven/eight/nine/
 eleven-column rows retain their behavior. These synthetic PTY checks leave the
 actual terminal/tool/provider gates in #12/#24 and owner release gate in #25 open.
 
+Conflict checks preinstall user bindings for entries, the quick menu and reload.
+They cover skip/warn/replace, registry-line provenance, read-only explanations,
+invalid policy rejection, reserved menu collisions, later user changes and
+restoration. Existing launcher fixtures explicitly select `replace` to retain
+their earlier binding setup. Public TSV layouts remain unchanged; `--origin-tsv`
+adds the effective registry location to the execution layout.
+
 Chat checks use provider and clipboard substitutes for valid/malformed/empty
 responses, session continuation, missing dependencies, provider/copy failures,
 quit controls and interruption. Attached-popup typing, copying and Ctrl-C check
 owned request/process and temporary-file cleanup. Ctrl-C cancels the owned
 request and closes chat; it does not consume quit/copy controls as application
 input. Real ocq/provider qualification remains separate in #12/#24.
+
+Interactive fixture shells set `HISTFILE=/dev/null`. The tmux server-stop command
+can overlap shell shutdown, so history must not create files while the disposable
+home is being removed. A regression explicitly flushes interactive history and
+asserts that no home history file appears. This keeps cleanup failures visible
+instead of masking them with deletion retries.

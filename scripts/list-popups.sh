@@ -8,7 +8,7 @@ local_registry="$(resolve_local_registry)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/list-popups.sh [--tsv|--pretty|--deps|--deps-tsv|--state-tsv|--execution-tsv]
+Usage: scripts/list-popups.sh [--tsv|--pretty|--deps|--deps-tsv|--state-tsv|--execution-tsv|--origin-tsv]
 
 Merges popups.tsv with an optional local registry. Later rows with the same id
 override earlier rows. Blank lines and # comments are ignored.
@@ -212,7 +212,13 @@ merged_tsv() (
       shortcuts["$slot"]="${locations[$id]} ($id)"
     done
   done
-  for id in "${order[@]}"; do printf '%s\n' "${rows[$id]}"; done
+  for id in "${order[@]}"; do
+    if [[ "$mode" == --origin-tsv ]]; then
+      printf '%s\t%s\n' "${rows[$id]}" "${locations[$id]}"
+    else
+      printf '%s\n' "${rows[$id]}"
+    fi
+  done
 )
 
 mode="${1:---pretty}"
@@ -225,11 +231,13 @@ case "$mode" in
       printf '%-14s %-9s %-7s %-18s %-9s %-9s %-10s %-12s %s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$launch_mode" "$completion" "$command"
     done
     ;;
-  --deps|--deps-tsv|--state-tsv|--execution-tsv)
-    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps kind arguments; do
+  --deps|--deps-tsv|--state-tsv|--execution-tsv|--origin-tsv)
+    merged_tsv | while IFS=$'\t' read -r id direct_key menu_key title width height command launch_mode completion enabled deps kind arguments source; do
       status="$(deps_status "$deps")"
-      if [[ "$mode" == "--execution-tsv" ]]; then
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$enabled" "$deps" "$status" "$kind" "$arguments"
+      if [[ "$mode" == "--execution-tsv" || "$mode" == "--origin-tsv" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$enabled" "$deps" "$status" "$kind" "$arguments"
+        if [[ "$mode" == --origin-tsv ]]; then printf '\t%s' "$source"; fi
+        printf '\n'
       elif [[ "$mode" == "--state-tsv" ]]; then
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$direct_key" "$menu_key" "$title" "$width" "$height" "$command" "$launch_mode" "$completion" "$enabled" "$deps" "$status"
       elif [[ "$mode" == "--deps-tsv" ]]; then

@@ -50,6 +50,7 @@ class LauncherTests(unittest.TestCase):
             XDG_STATE_HOME=str(self.home / "state"),
             PATH=str(self.bin) + os.pathsep + os.environ["PATH"],
             SHELL="/bin/bash",
+            HISTFILE="/dev/null",
             TERM="xterm-256color",
         )
         self.stub("tmux", f"exec {shlex.quote(REAL_TMUX)} -S {shlex.quote(str(self.socket))} \"$@\"")
@@ -57,6 +58,7 @@ class LauncherTests(unittest.TestCase):
         self.owned_cleanup(lambda: self.tmux("kill-server", check=False))
         self.tmux("set-option", "-g", "@tmux-popups-enable-vscode", "off")
         self.tmux("set-option", "-g", "assume-paste-time", "0")
+        self.tmux("set-option", "-g", "@tmux-popups-conflicts", "replace")
         self.tmux("set-option", "-g", "@tmux-popups-profile", "full")
         self.tmux("set-option", "-g", "@tmux-popups-availability", "ignore")
 
@@ -138,6 +140,14 @@ class LauncherTests(unittest.TestCase):
                 return
             time.sleep(0.03)
         self.fail("fixture did not complete within six seconds")
+
+    def test_interactive_history_does_not_write_into_fixture_home(self):
+        marker = self.home / "history-flushed"
+        self.tmux("send-keys", "-t", "fixture",
+                  "history -w; printf ready > " + shlex.quote(str(marker)), "Enter")
+        self.wait_until(marker.exists)
+        self.assertFalse((self.home / ".bash_history").exists(),
+                         "interactive shell history must not race fixture cleanup")
 
     def test_registry_override_keeps_order_and_adds_local_entry(self):
         registry = self.home / "local.tsv"
