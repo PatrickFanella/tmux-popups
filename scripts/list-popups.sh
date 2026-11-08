@@ -20,16 +20,17 @@ EOF
 merged_tsv() (
   local registries=("$default_registry") records source line id direct menu title width height command launch_mode completion key slot canonical enabled deps override profile kind arguments
   local -a order=()
-  local -A rows=() locations=() shortcuts=() target_keys=() overrides=() reuse_options=()
+  local -A rows=() locations=() shortcuts=() target_keys=() overrides=() reuse_options=() close_options=()
   [[ -r "$local_registry" ]] && registries+=("$local_registry")
   profile="$(tmux show-option -gqv @tmux-popups-profile 2>/dev/null || true)"
   profile="${profile:-small}"
   [[ "$profile" == small || "$profile" == full ]] || die "invalid profile: $profile"
   # Read enabled overrides in one server round trip. Values remain literal data.
   while IFS=' ' read -r key override; do
-    [[ "$key" == @tmux-popups-*-enabled || "$key" == @tmux-popups-*-reuse ]] || continue
+    [[ "$key" == @tmux-popups-*-enabled || "$key" == @tmux-popups-*-reuse || "$key" == @tmux-popups-*-close ]] || continue
     override="${override#\"}"; override="${override%\"}"
     if [[ "$key" == *-reuse ]]; then reuse_options["$key"]="$override"
+    elif [[ "$key" == *-close ]]; then close_options["$key"]="$override"
     else overrides["$key"]="$override"; fi
   done < <(tmux show-options -g 2>/dev/null || true)
   records="$(awk -F '\t' '
@@ -136,6 +137,7 @@ merged_tsv() (
       *) die "$slot: invalid completion: $completion" ;;
     esac
     window_reuse_policy "$id" "$launch_mode" "${reuse_options[@tmux-popups-$id-reuse]:-off}" >/dev/null
+    entry_close_policy "$id" "$launch_mode" "${close_options[@tmux-popups-$id-close]:-always}" >/dev/null
     [[ "$launch_mode:$kind:$command" != command:plugin:- ]] || die "$slot: command mode requires an executable target"
     [[ "$enabled" == on || "$enabled" == off ]] || die "$slot: invalid enabled setting: $enabled"
     valid_dependencies "$deps" || die "$slot: invalid dependencies: $deps"

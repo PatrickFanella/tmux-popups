@@ -116,14 +116,15 @@ if rows="$("$root/scripts/list-popups.sh" --origin-tsv)"; then
     resolve_execution "$command" "$kind" "$arguments" "$source"
     executable="${execution_argv[0]:-interactive shell}"
     [[ "$kind" != shell ]] || executable='explicit shell expression (not executed)'
+    close="$(entry_close_policy "$id" "$mode")"
     enabled_source="$source"
     if [[ -n "$(tmux show-option -gqv "@tmux-popups-$id-enabled" 2>/dev/null || true)" ]]; then
       enabled_source="tmux option @tmux-popups-$id-enabled"
     elif [[ "$source" == "$root/popups.tsv:"* && "$(tmux show-option -gqv @tmux-popups-profile 2>/dev/null || true)" == full ]]; then
       enabled_source='full profile'
     fi
-    printf '%s: %s; mode=%s/%s; enabled=%s [%s]; deps=%s (%s); executable=%s; source=%s\n' \
-      "$id" "$title" "$mode" "$completion" "$enabled" "$enabled_source" "$deps" "$status" "$executable" "$source"
+    printf '%s: %s; mode=%s/%s; close=%s; enabled=%s [%s]; deps=%s (%s); executable=%s; source=%s\n' \
+      "$id" "$title" "$mode" "$completion" "$close" "$enabled" "$enabled_source" "$deps" "$status" "$executable" "$source"
   done <<<"$rows"
 else
   fail 'merged registry failed shared validation; fix the file/line error above'

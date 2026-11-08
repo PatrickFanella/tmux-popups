@@ -20,6 +20,11 @@ else
   fi
   export TMUX_POPUPS_DIRECTORY="${TMUX_POPUPS_DIRECTORY:-$PWD}"
 fi
+if [[ "${2:-}" == --recover ]]; then
+  if ! origin_pane || ! origin_client; then
+    die 'origin is no longer available; close recovery and relaunch'
+  fi
+fi
 cd -- "$TMUX_POPUPS_DIRECTORY" || die "origin directory is unavailable: $TMUX_POPUPS_DIRECTORY"
 rows="$("$root/scripts/list-popups.sh" --execution-tsv)"
 
@@ -43,9 +48,13 @@ if [[ -n "$row" ]]; then
   fi
 
   reuse="$(window_reuse_policy "$id" "$mode")"
+  close="$(entry_close_policy "$id" "$mode")"
 
   resolve_execution "$command" "$kind" "$arguments" "popup $id"
 
+  if [[ "${2:-}" == --recover && "$mode" == command ]]; then
+    die 'entry mode changed; close recovery and relaunch the entry'
+  fi
   if [[ "$mode" == command ]]; then
     if [[ "$completion" == background ]]; then
       # No terminal input/output and no completion status after launch.
@@ -64,6 +73,9 @@ if [[ -n "$row" ]]; then
     # Quote the executable for the one shell boundary in tmux's launch command.
     executable=${root//\'/\'\\\'\'}
     launch_command="'$executable/scripts/run-popup.sh' $id"
+    if [[ "$close" != always ]]; then
+      launch_command="'$executable/scripts/recover-entry.sh' $id $close $mode"
+    fi
     # tmux treats -c/-d as formats, so protect literal hashes in path data.
     launch_directory=${TMUX_POPUPS_DIRECTORY//#/##}
     case "$mode" in

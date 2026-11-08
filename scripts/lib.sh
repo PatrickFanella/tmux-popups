@@ -335,3 +335,18 @@ window_reuse_policy() {
   esac
   printf '%s' "$policy"
 }
+
+entry_close_policy() {
+  local id="$1" mode="$2" policy
+  if (($# == 3)); then policy="$3"
+  else policy="$(tmux show-option -gqv "@tmux-popups-$id-close" 2>/dev/null || true)"; fi
+  policy="${policy:-always}"
+  case "$policy" in
+    always) ;;
+    on-success|never)
+      [[ "$mode" != command ]] || die "popup $id: close policy requires popup or window mode"
+      command -v python3 >/dev/null 2>&1 || die "popup $id: python3 required for retained close policy" ;;
+    *) die "popup $id: invalid close policy: $policy (use always, on-success or never)" ;;
+  esac
+  printf '%s' "$policy"
+}
