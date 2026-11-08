@@ -87,6 +87,46 @@ if [[ "${!#}" == broken ]]; then printf 'invalid'; else cat "$FIXTURE/response";
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ocq not found", result.stderr)
 
+    def test_dispatcher_popup_quit_returns_success(self):
+        self.tmux("set-environment", "-g", "FIXTURE", str(self.home))
+        self.tmux("set-environment", "-g", "TMPDIR", str(self.home))
+        client = self.attach()
+        target = self.tmux("list-clients", "-F", "#{client_name}").stdout.strip()
+        ids = self.tmux("display-message", "-p", "-t", "fixture",
+                        "#{session_id}|#{window_id}|#{pane_id}").stdout.strip().split("|")
+        for copy in [False, True]:
+            self.terminal_output.clear()
+            process = subprocess.Popen([str(ROOT / "scripts/run-popup.sh"), "chat", "--launch",
+                                        target, *ids, str(self.home)], env=self.env,
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            self.addCleanup(lambda process=process: process.poll() is None and process.terminate())
+            self.wait_until(lambda: b"You" in self.terminal_output)
+            if copy:
+                os.write(client, b"qualification\r")
+                self.wait_until(lambda: b"answer" in self.terminal_output)
+            os.write(client, b"cq\r" if copy else b"q\r")
+            _, error = process.communicate(timeout=3)
+            self.assertEqual(process.returncode, 0, error)
+            if copy: self.assertEqual((self.home / "copied").read_bytes(), b"answer\n\n")
+            self.assertFalse(list(self.home.glob("tmux-popups-chat.*")))
+
+    def test_successful_provider_stops_stubborn_owned_descendant(self):
+        marker = self.home / "descendant"
+        child_code = "import os,pathlib,signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid())); time.sleep(60)"
+        provider = self.home / "provider.py"
+        provider.write_text("import pathlib,subprocess,sys,time\nsubprocess.Popen([sys.executable,'-c'," + repr(child_code) + "])\nwhile not pathlib.Path(" + repr(str(marker)) + ").exists(): time.sleep(.01)\nprint(" + repr(self.response.read_text()) + ")\n")
+        self.stub("ocq", "exec python3 " + shlex.quote(str(provider)))
+        def cleanup():
+            if marker.exists():
+                try: os.kill(int(marker.read_text()), signal.SIGKILL)
+                except ProcessLookupError: pass
+        self.addCleanup(cleanup)
+        result = self.chat("hello\nq\n")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        pid = int(marker.read_text())
+        self.wait_until(lambda: not Path(f"/proc/{pid}/stat").exists() or
+                        Path(f"/proc/{pid}/stat").read_text().split()[2] == "Z")
+
     def test_missing_json_runtime_is_reported(self):
         for command in ["bash", "dirname"]:
             (self.bin / command).symlink_to("/usr/bin/" + command)

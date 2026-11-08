@@ -123,7 +123,9 @@ hosted jobs without this optional tool still run substitute and fallback cases.
 
 Chat checks use provider and clipboard substitutes for valid/malformed/empty
 responses, session continuation, missing dependencies, provider/copy failures,
-quit controls and interruption. Attached-popup typing, copying and Ctrl-C check
+quit controls and interruption. Dispatcher-launched popup quit/copy-quit returns
+zero without closing its own TTY first. Successful provider completion also stops
+owned descendants that ignore TERM. Attached-popup typing, copying and Ctrl-C check
 owned request/process and temporary-file cleanup. Ctrl-C cancels the owned
 request and closes chat; it does not consume quit/copy controls as application
 input. Real ocq/provider qualification remains separate in #12/#24.
