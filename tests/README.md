@@ -140,3 +140,11 @@ space/apostrophe/control-byte paths, literal argument boundaries, configurable
 notes and no note creation during discovery, missing tools, and registry dispatch
 with window reuse. Git is required by the verification harness; provider tools
 remain optional and are not contacted by these tests.
+
+Recovery checks exercise the default and retained close policies, success and
+nonzero/signal exits, missing/restored executables, retry, raw-terminal recovery,
+application typing, Ctrl-C and external SIGTERM cleanup of owned groups. They
+check exact origin values during fresh window fallback, nonterminal status,
+vanished origins, optional Python dependency and rejecting a change to command
+mode during retry. Actual native-terminal/tool/provider qualification remains
+separate in #12/#24.

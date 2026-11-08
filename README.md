@@ -19,7 +19,7 @@ Small tmux popup toolkit with a TSV registry, generated bindings, shared shell h
 - Local override registry: `~/.config/tmux-popups/popups.local.tsv`
 - Dependency status in help and CLI output
 - Doctor script for common tmux/TPM/config problems
-- Bash-only implementation; no build step
+- Bash launcher with optional Python helpers; no build step
 - Generated config stored at `${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf`
 
 ## Install with TPM
@@ -629,6 +629,45 @@ server-serialized transaction described above.
 
 The configurable vscode menu command runs through `run-shell` with a shell-quoted
 pane directory, including on tmux 3.3a. It retains shell command semantics.
+
+### Keep failures readable and retry
+
+The per-entry option `@tmux-popups-<id>-close` controls popup/window completion:
+
+| Value | Behavior |
+| --- | --- |
+| `always` (default) | Keep the previous behavior: exit when the tool exits. |
+| `on-success` | Exit on status 0 and retain other failures for recovery. |
+| `never` | Retain the view after success or failure. |
+
+For example, keep a Yazi failure visible in its default window mode:
+
+```tmux
+set -g @tmux-popups-yazi-enabled 'on'
+set -g @tmux-popups-yazi-close 'on-success'
+```
+
+Retained policies require Python 3 for foreground-terminal control. They apply
+to popup/window entries; command entries keep their existing completion and
+exit-status behavior. Invalid policies or command-mode combinations fail shared
+validation before the generated cache changes. Doctor reports the effective
+close policy.
+
+After the application ends, recovery shows its exit status. Press `r` to start
+the same entry again, `c` or Enter to close, or `w` from a popup to start again
+in a new window. Reopening starts a new process; it does not move the old live
+process or promise application session recovery. The original invoking context
+is retained. Retry revalidates the current registry/executable while inheriting
+the recovery view's existing environment. Close and relaunch to pick up a new
+server environment or a change to command mode.
+
+While the application runs, its input stays with the application. Ctrl-C cancels
+and closes the launch, and owned process-group cleanup completes before retry.
+A crashed application's terminal settings are restored before recovery reads a
+key. Closing a retained failure preserves its exit status, so tmux may show its
+usual run-shell error view afterward; `q` closes that view. A piped/nonterminal
+call keeps the application's status without a recovery prompt. Tmux's separate
+`remain-on-exit` setting can still retain a completed window.
 
 ### Add project-aware actions
 
