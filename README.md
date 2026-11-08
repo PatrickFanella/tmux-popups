@@ -25,6 +25,8 @@ Small tmux popup toolkit with a TSV registry, generated bindings, shared shell h
 Source and pull requests: [canonical Gitea repository](https://git.subcult.tv/PatrickFanella/tmux-popups).
 The GitHub repository is a push mirror used by the TPM shorthand below.
 See [migration and rollback](docs/migration.md) and [troubleshooting](docs/troubleshooting.md).
+The [product website source](site/README.md) includes the landing page,
+installation docs and local preview instructions.
 
 ## Install with TPM
 

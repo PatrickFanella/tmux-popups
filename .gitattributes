@@ -1,0 +1,2 @@
+# Keep copied OFL bytes identical to their approved Studio source hashes.
+site/fonts/*-OFL.txt -text whitespace=-blank-at-eol,-blank-at-eof,cr-at-eol

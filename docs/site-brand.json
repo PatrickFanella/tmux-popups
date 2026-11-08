@@ -1,0 +1,81 @@
+{
+  "studio_repository": "https://git.subcult.tv/subculture-collective/subcult-tv",
+  "studio_revision": "f69b93c299216425dadb6f5c6117d24c2e36388d",
+  "selection": "Instrument Panel with owner-confirmed IBM Plex; site requested 2026-11-08",
+  "font_tools": "4.68.0",
+  "brotli": "1.2.1",
+  "unicode_ranges": "U+0020-00FF,U+0100-024F,U+2000-206F,U+2190-21FF,U+2212,U+25A0",
+  "files": [
+    {
+      "source": "studio/brands/tmux-popups/logos/mark.svg",
+      "source_sha256": "31d49ef5a06884b87451f9148e97b7e61c8530278b28926f729f9f94a7239010",
+      "target": "site/assets/mark.svg",
+      "sha256": "31d49ef5a06884b87451f9148e97b7e61c8530278b28926f729f9f94a7239010",
+      "transform": "copy"
+    },
+    {
+      "source": "studio/brands/tmux-popups/product/og.png",
+      "source_sha256": "34ee401b3025e771d2d86022976ea98a4d758b1cbe06543e6fe692a5b8fd79b2",
+      "target": "site/assets/og.png",
+      "sha256": "34ee401b3025e771d2d86022976ea98a4d758b1cbe06543e6fe692a5b8fd79b2",
+      "transform": "copy"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/ibm-plex-sans-OFL.txt",
+      "source_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "target": "site/fonts/sans-OFL.txt",
+      "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "transform": "copy"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/ibm-plex-sans-condensed-OFL.txt",
+      "source_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "target": "site/fonts/condensed-OFL.txt",
+      "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "transform": "copy"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/ibmplexmono-OFL.txt",
+      "source_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "target": "site/fonts/mono-OFL.txt",
+      "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "transform": "copy"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/IBM-Plex-Sans-Condensed-Bold.ttf",
+      "source_sha256": "723e245902b45a49f8cf602d15891bae08c31309dce7c56d209d10cd471b88c7",
+      "target": "site/fonts/plex-sans-condensed-700-latin.woff2",
+      "sha256": "4218c0b1cda1bcf3469d989f46612e76c48d24568a3a764d555e3855f770a52e",
+      "transform": "Latin WOFF2 subset; renamed to respect reserved Plex font name",
+      "family": "Tmux Panel Condensed",
+      "style": "Bold"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/IBM-Plex-Sans-Regular.ttf",
+      "source_sha256": "975dcda37d80f038dcd143c22e33ca2d97a0cc5a929aace1c749153b0fe1afa5",
+      "target": "site/fonts/plex-sans-400-latin.woff2",
+      "sha256": "644761661637e1ca5a3625d4f80b6643c1b2ff4c95a0a3d5601de46355be41e6",
+      "transform": "Latin WOFF2 subset; renamed to respect reserved Plex font name",
+      "family": "Tmux Panel Sans",
+      "style": "Regular"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/IBM-Plex-Sans-Bold.ttf",
+      "source_sha256": "9e6c74a889a700d707613d24548fe4ffa6bc59559a0689d2cf9e133bdcdafb2f",
+      "target": "site/fonts/plex-sans-700-latin.woff2",
+      "sha256": "a17343d2b2a430636a08badef162a5d8d88b44b33155be7713966e204aa5ee89",
+      "transform": "Latin WOFF2 subset; renamed to respect reserved Plex font name",
+      "family": "Tmux Panel Sans",
+      "style": "Bold"
+    },
+    {
+      "source": "studio/brands/tmux-popups/fonts/IBM-Plex-Mono-0.ttf",
+      "source_sha256": "a7fdc993f9f0387caedba4e42521136fa97e4c0837ae6239bf0413ccf8af00c2",
+      "target": "site/fonts/plex-mono-400-latin.woff2",
+      "sha256": "6c6780aecbe5838ca7526fe2e82267f65c89a353e337ba0e6d521b89070e6d4d",
+      "transform": "Latin WOFF2 subset; renamed to respect reserved Plex font name",
+      "family": "Tmux Panel Mono",
+      "style": "Regular"
+    }
+  ]
+}
