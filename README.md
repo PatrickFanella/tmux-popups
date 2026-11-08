@@ -603,6 +603,34 @@ server-serialized transaction described above.
 The configurable vscode menu command runs through `run-shell` with a shell-quoted
 pane directory, including on tmux 3.3a. It retains shell command semantics.
 
+### Reuse a tool window
+
+Reuse is opt-in for entries in `window` mode. For example:
+
+```tmux
+set -g @tmux-popups-yazi-enabled 'on'
+set -g @tmux-popups-yazi-reuse 'session'
+```
+
+`off` (default) creates a new window on each launch. `session` returns to a live
+window for that entry in the invoking session. `directory` also requires the
+exact invoking directory to match, so different directories get separate tool
+windows. This scope uses the directory, without Git-root detection. Reuse with
+popup or command mode is a validation error.
+
+The dispatcher marks its windows with the entry ID, scope, directory and tool
+pane. Renaming a tool window does not break reuse, and an unrelated window with
+the same title is never adopted. Concurrent launches of an entry are serialized
+within its invoking session. Closed windows are recreated. If a tool exits in
+a `remain-on-exit` window, the old pane stays available for inspection and the
+next launch creates a new tool window.
+
+A reused process keeps its original launch environment and working directory.
+The origin helpers still reject a vanished client or pane. Reuse follows tmux's
+normal window selection: clients attached to the same session share its selected
+window. Other sessions have independent tool windows. CLI dispatch without the
+`--launch` context runs the adapter in the current terminal as before.
+
 ### Invoking context
 
 Direct bindings and menu actions capture the invoking context when tmux dispatches

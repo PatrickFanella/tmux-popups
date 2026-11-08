@@ -322,3 +322,16 @@ binding_conflict_policy() {
     *) die "invalid binding conflict policy: $policy (use warn, skip or replace)" ;;
   esac
 }
+
+window_reuse_policy() {
+  local id="$1" mode="$2" policy
+  if (($# == 3)); then policy="$3"
+  else policy="$(tmux show-option -gqv "@tmux-popups-$id-reuse" 2>/dev/null || true)"; fi
+  policy="${policy:-off}"
+  case "$policy" in
+    off) ;;
+    session|directory) [[ "$mode" == window ]] || die "popup $id: reuse requires window mode" ;;
+    *) die "popup $id: invalid reuse policy: $policy (use off, session or directory)" ;;
+  esac
+  printf '%s' "$policy"
+}
