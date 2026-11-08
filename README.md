@@ -630,6 +630,32 @@ server-serialized transaction described above.
 The configurable vscode menu command runs through `run-shell` with a shell-quoted
 pane directory, including on tmux 3.3a. It retains shell command semantics.
 
+### Add a searchable launcher
+
+Copy the `search` row from `examples/popups.optional.tsv` into your local
+registry and reload through `tmux-popups.tmux`. The example uses `Prefix+M-Space`
+and menu `/`. Change those keys if they conflict with your existing bindings.
+The original quick menu stays available.
+
+The search list shows each enabled entry's title, direct/menu shortcuts, launch
+mode and availability. With `fzf` installed, type a query and press Enter to
+select. Escape, Ctrl-C and no matches close the picker without launching an
+entry. Without `fzf`, the same command opens a native tmux menu. No additional
+runtime is required for the fallback.
+
+The `search` row uses foreground `command` mode because the launcher manages
+its own picker popup. The picker closes before the selected entry launches.
+Selection uses the original invoking client, session, window, pane and directory
+and goes through `run-popup.sh`, including its enablement, availability and reuse
+rules. Disabled entries are omitted; `hide-unavailable` also omits missing tools.
+Under `show-disabled`, a selected missing tool is rejected by the same dispatcher
+used for direct launches. The launcher excludes its own row from the choices.
+
+The example's dependency field is `-` so the native fallback remains available
+without `fzf`. Invoke it through the registry binding/menu, or supply the explicit
+origin environment when calling the script yourself. It never guesses which
+attached client to target.
+
 ### Reuse a tool window
 
 Reuse is opt-in for entries in `window` mode. For example:

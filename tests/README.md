@@ -113,3 +113,10 @@ registry/environment precedence, disabled/unavailable entries, temporary output
 and bad CLI arguments. An explicit attached-popup input check receives exact
 sample bytes and exits on its deadline. This automated input evidence remains
 separate from a real terminal/application qualification.
+
+Search checks cover selection labels and availability filtering, disabled rows,
+empty lists, cancellation/no-match/error statuses, malformed/unlisted selection,
+popup-to-popup transition and native-menu fallback. Both picker and fallback
+preserve the exact origin, including literal control bytes and shell expressions
+in the directory. A real fzf typing/selection check runs when fzf is installed;
+hosted jobs without this optional tool still run substitute and fallback cases.
