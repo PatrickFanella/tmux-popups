@@ -72,9 +72,9 @@ if [[ -n "$row" ]]; then
     done
     # Quote the executable for the one shell boundary in tmux's launch command.
     executable=${root//\'/\'\\\'\'}
-    launch_command="'$executable/scripts/run-popup.sh' $id"
+    launch_command="exec '$executable/scripts/run-popup.sh' $id"
     if [[ "$close" != always ]]; then
-      launch_command="'$executable/scripts/recover-entry.sh' $id $close $mode"
+      launch_command="exec '$executable/scripts/recover-entry.sh' $id $close $mode"
     fi
     # tmux treats -c/-d as formats, so protect literal hashes in path data.
     launch_directory=${TMUX_POPUPS_DIRECTORY//#/##}

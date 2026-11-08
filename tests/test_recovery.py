@@ -213,8 +213,8 @@ exit "${APP_STATUS:-0}"''')
         process = self.start()
         self.prompt(23)
         os.write(self.client, b"\x03")
-        process.communicate(timeout=3)
-        self.assertEqual(process.returncode, 130)
+        _, error = process.communicate(timeout=3)
+        self.assertEqual(process.returncode, 130, error)
 
     def test_retry_rejects_a_change_to_background_command_mode(self):
         self.settings(APP_STATUS="23")
