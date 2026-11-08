@@ -25,3 +25,5 @@ tmux-local	-	t	tmux.local.conf	80%	80%	scripts/tools/tmux-local.sh
 home	-	h	home	80%	80%	scripts/tools/home.sh
 projects	-	p	projects	80%	80%	scripts/tools/projects.sh
 downloads	-	d	downloads	80%	80%	scripts/tools/downloads.sh
+# Search manages its own picker popup, so its entry uses foreground command mode.
+search	M-Space	/	search popups	90%	80%	scripts/search-popups.sh	command	foreground	on	-	plugin	-
