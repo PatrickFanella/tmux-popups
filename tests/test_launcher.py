@@ -187,7 +187,7 @@ class LauncherTests(unittest.TestCase):
         self.load()
         client = self.attach()
         os.write(client, b"\x02Y")
-        self.wait_until(marker.exists)
+        self.wait_until(lambda: marker.exists() and marker.read_text() == "called")
         self.assertEqual(marker.read_text(), "called")
 
     def test_menu_action_executes_yazi_substitute(self):
@@ -199,7 +199,7 @@ class LauncherTests(unittest.TestCase):
         os.write(client, b"\x02\r")
         self.wait_until(lambda: b"Quick Menu" in self.terminal_output)
         os.write(client, b"r")
-        self.wait_until(marker.exists)
+        self.wait_until(lambda: marker.exists() and marker.read_text() == "menu")
         self.assertEqual(marker.read_text(), "menu")
 
     def test_popup_accepts_input_from_attached_terminal(self):
@@ -212,7 +212,7 @@ class LauncherTests(unittest.TestCase):
         os.write(client, b"=")
         self.wait_until(lambda: b"fixture input:" in self.terminal_output)
         os.write(client, b"terminal fixture\r")
-        self.wait_until(marker.exists)
+        self.wait_until(lambda: marker.exists() and marker.read_text() == "terminal fixture")
         self.assertEqual(marker.read_text(), "terminal fixture")
 
     def test_unknown_entry_fails_with_readable_error(self):
