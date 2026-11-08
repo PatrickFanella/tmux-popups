@@ -22,6 +22,10 @@ Small tmux popup toolkit with a TSV registry, generated bindings, shared shell h
 - Bash launcher with optional Python helpers; no build step
 - Generated config stored at `${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf`
 
+Source and pull requests: [canonical Gitea repository](https://git.subcult.tv/PatrickFanella/tmux-popups).
+The GitHub repository is a push mirror used by the TPM shorthand below.
+See [migration and rollback](docs/migration.md) and [troubleshooting](docs/troubleshooting.md).
+
 ## Install with TPM
 
 Add to `~/.tmux.conf` or your sourced tmux config:
@@ -35,7 +39,7 @@ Reload tmux, then press TPM install key (`prefix + I`).
 ## Install manually
 
 ```sh
-git clone https://github.com/PatrickFanella/tmux-popups.git ~/.config/tmux/plugins/tmux-popups
+git clone https://git.subcult.tv/PatrickFanella/tmux-popups.git ~/.config/tmux/plugins/tmux-popups
 ```
 
 Then source the plugin entrypoint:
@@ -55,7 +59,7 @@ tmux source-file ~/.tmux.conf
 Useful when hacking on the plugin but still letting TPM manage load/update keys.
 
 ```sh
-git clone https://github.com/PatrickFanella/tmux-popups.git ~/Projects/tools/tmux-popups
+git clone https://git.subcult.tv/PatrickFanella/tmux-popups.git ~/Projects/tools/tmux-popups
 mkdir -p ~/.config/tmux/plugins
 ln -sfn ~/Projects/tools/tmux-popups ~/.config/tmux/plugins/tmux-popups
 ```
@@ -165,7 +169,7 @@ Use `-` in a row's width or height to inherit the default width/height options.
 Rows are tab-separated:
 
 ```tsv
-id	direct_key	menu_key	title	width	height	command	mode	completion	enabled	deps
+id	direct_key	menu_key	title	width	height	command	mode	completion	enabled	deps	kind	arguments
 ```
 
 | Column | Meaning |
@@ -293,7 +297,8 @@ Background starts the adapter with stdin, stdout and stderr connected to
 `/dev/null`, then returns success after starting it. It neither waits nor reports
 the later exit status. The adapter owns any durable output it needs. Background
 is valid only for command mode; command mode requires an executable, not `-`.
-No shell expression or arguments are evaluated from the command column.
+For executable kinds, the command column is one path and arguments come from
+the JSON argument column. Only the explicit `shell` kind evaluates an expression.
 
 Choose an adapter that does not require terminal input for command entries.
 `run-popup.sh <id>` executes adapters directly for CLI callers. `--launch` is the
@@ -340,29 +345,28 @@ tmux source-file ~/.tmux.conf
 
 ## Create a popup script
 
-Create `scripts/tools/hello.sh`:
+Keep personal scripts outside the plugin checkout so updates preserve them:
 
 ```sh
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/scripts"
+cat > "${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/scripts/hello.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
-
 printf 'Hello from tmux-popups.\n\nPress Enter to close... '
 read -r _ || true
+SH
+chmod +x "${XDG_CONFIG_HOME:-$HOME/.config}/tmux-popups/scripts/hello.sh"
 ```
 
-Make it executable:
-
-```sh
-chmod +x scripts/tools/hello.sh
-```
-
-Add a row to `popups.tsv` or your local registry:
+Add this row to your local registry, with actual tabs between fields:
 
 ```tsv
-hello	-	h	hello	75%	75%	scripts/tools/hello.sh
+hello	F8	8	hello	75%	75%	hello.sh	popup	foreground	on	-	user	-
 ```
 
-Reload tmux and open it with `Prefix+Enter`, then `h`.
+If you configured `@tmux-popups-user-script-directory`, put `hello.sh` there
+instead. Reload through the plugin entrypoint, then press `Prefix+F8` or select
+`8` from `Prefix+Enter`.
 
 ## Optional examples
 
@@ -372,7 +376,8 @@ Extra rows live in:
 examples/popups.optional.tsv
 ```
 
-Copy rows into your local registry or `popups.tsv`, install matching tools, then reload tmux.
+Copy selected rows into your local registry, install matching tools, then reload
+through the plugin entrypoint. Keep the shipped `popups.tsv` unchanged for updates.
 
 Examples:
 
@@ -412,27 +417,51 @@ It checks:
 - default/local registries
 - TPM path and local plugin entry
 - TPM registration in tmux config
-- generated config creation
-- `tmux source-file -n` validation
-- per-popup dependency status
+- temporary generated config and `tmux source-file -n` validation
+- effective options, entry provenance, dependencies, close policy and binding conflicts
+
+Ordinary diagnosis leaves the shared cache, prefix bindings and ownership unchanged.
+See [effective diagnosis](#diagnose-effective-settings-without-applying-changes)
+for details and the explicit bounded input check.
 
 Warnings are informational. Failures exit nonzero.
 
-## Validate generated config
+## Validate and apply settings
+
+Run these commands from the plugin checkout inside the affected tmux server:
 
 ```sh
+scripts/doctor.sh
 scripts/generate-config.sh
-tmux source-file -n ~/.cache/tmux-popups/generated.conf
-tmux source-file ~/.tmux.conf
+scripts/apply-config.sh --explain "${XDG_CACHE_HOME:-$HOME/.cache}/tmux-popups/generated.conf"
+./tmux-popups.tmux
 ```
+
+Doctor diagnoses without applying settings. Generation publishes a validated
+cache but does not install bindings. Explanation previews conflicts against that
+cache. The plugin entrypoint regenerates and applies bindings with ownership
+checks. Source your configured tmux config first if you changed options there.
+Do not source the generated cache directly; that bypasses conflict reconciliation.
 
 ## CI
 
-GitHub Actions runs:
+The canonical Gitea workflow, `.gitea/workflows/ci.yml`, runs `scripts/check.sh`
+for pull requests and pushes to `main`. It runs Bash syntax checks, ShellCheck
+and the isolated regression suite in `node:24-bookworm-slim`, installing Git,
+Python 3, ShellCheck and tmux. The GitHub mirror workflow runs the same script
+on an Ubuntu runner.
 
-- `bash -n` on plugin scripts
-- ShellCheck
-- config generation smoke test
+Locally, install those verification tools plus GNU `timeout`, then run:
+
+```sh
+scripts/check.sh
+```
+
+`tests/run.sh` runs the Python regression suite alone with a 360-second bound.
+See [the verification guide](tests/README.md) for fixture details. Automated PTY
+checks, actual attached terminal checks and real provider checks are separate
+evidence. Optional Yazi, OpenCode and provider adapters are not qualified merely
+because their dependency check or CI passes. See [qualification records](docs/verification/README.md).
 
 ## Optional tools used by default/extra rows
 
@@ -599,13 +628,15 @@ registry shortcuts instead of relying on one entry to overwrite another.
 
 ### Registry validation and cache publication
 
-Every non-comment registry row must have seven through eleven nonempty TSV fields.
+Every non-comment registry row must have seven through thirteen nonempty TSV fields.
 IDs accept letters, digits, underscores and hyphens. Keys accept a single
 printable character or a named tmux key with C-, M- or S- modifiers. Use `-`
 to disable a shortcut. Dimensions accept cell counts from 1 through 2147483647, 1% through
-100%, or `-` for the configured default. Commands must name an existing
-executable plugin-relative file, or `-` for the shell. Optional tool availability
-is checked separately, so a wrapper can be valid while its tool is not installed.
+100%, or `-` for the configured default. Executable commands must name an existing
+regular executable resolved by their
+`plugin`, `absolute` or `user` kind. The legacy `-` command opens a shell.
+The explicit `shell` kind evaluates an expression only during dispatch.
+Optional tool availability is checked separately, so a wrapper can be valid while its tool is not installed.
 Disabled rows still undergo full validation, including metadata and shortcuts. Titles cannot contain tmux formats or carriage returns.
 
 Errors identify the registry file and line, and listing emits no partial TSV.
