@@ -23,3 +23,5 @@ jobs:
         run: apt-get update && apt-get install -y --no-install-recommends git python3 shellcheck tmux
       - name: Syntax, ShellCheck and isolated launcher regressions
         run: scripts/check.sh
+      - name: Product site links, metadata and brand handoff
+        run: python3 scripts/check-site.py && node --check site/app.js

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tmux-popups.subcult.tv/sitemap.xml

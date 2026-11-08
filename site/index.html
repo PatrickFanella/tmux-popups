@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101418">
+  <title>tmux-popups — a quick menu for your tmux tools</title>
+  <meta name="description" content="Shell, notes, timer and your own tools, a shortcut away. A small tmux popup toolkit with one TSV registry for the quick menu and direct bindings.">
+  <link rel="canonical" href="https://tmux-popups.subcult.tv/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="tmux-popups — Tools up. Context stays.">
+  <meta property="og:description" content="A quick menu for your tmux tools. One TSV registry for the menu and direct bindings.">
+  <meta property="og:url" content="https://tmux-popups.subcult.tv/">
+  <meta property="og:image" content="https://tmux-popups.subcult.tv/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="tmux-popups Instrument Panel artwork: Tools up. Context stays. An illustrated popup menu over a terminal pane.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preload" href="fonts/plex-sans-condensed-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="wrap header">
+    <a class="brand" href="./" aria-label="tmux-popups home"><img src="assets/mark.svg" width="48" height="48" alt=""><span>tmux-popups</span></a>
+    <nav aria-label="Main"><a href="docs/">Docs</a><a href="#install">Install</a><a href="https://git.subcult.tv/PatrickFanella/tmux-popups">Git ↗</a><a href="https://subcult.tv/support">Support ↗</a></nav>
+  </header>
+  <main id="main">
+    <section class="wrap hero" aria-labelledby="intro">
+      <div class="hero-copy">
+        <p class="eyebrow">A small tmux toolkit</p>
+        <h1 id="intro">Tools up.<br> <span>Context stays.</span></h1>
+        <p class="lede">A quick menu for your tmux tools. Open a shell, jot a note, start a timer. One TSV registry generates the menu and your direct bindings.</p>
+        <div class="actions"><a class="button primary" href="#install">Install with TPM <span aria-hidden="true">↓</span></a><a class="button" href="docs/">Read the docs <span aria-hidden="true">→</span></a></div>
+        <p class="hero-note">Bash + tmux. MIT licensed. Your terminal keeps its font and theme.</p>
+      </div>
+      <div class="instrument" aria-label="Illustrated quick menu">
+        <div class="panel-heading"><span>~/your-project</span><span>tmux</span></div>
+        <div class="terminal-background" aria-hidden="true"><p><span class="mint">$</span> git status --short</p><p> M README.md</p><p>?? notes/</p><p><span class="mint">$</span> <span class="cursor"></span></p></div>
+        <div class="popup">
+          <div class="popup-heading"><span>Quick menu</span><kbd>Prefix + Enter</kbd></div>
+          <div class="demo-choices" role="group" aria-label="Explore the default tools">
+            <button type="button" data-demo="help" aria-pressed="false" disabled><span class="row-pointer" aria-hidden="true">›</span><span>Help</span><kbd>H</kbd></button>
+            <button type="button" data-demo="shell" aria-pressed="true" disabled><span class="row-pointer" aria-hidden="true">›</span><span>Shell</span><kbd>Enter</kbd></button>
+            <button type="button" data-demo="notes" aria-pressed="false" disabled><span class="row-pointer" aria-hidden="true">›</span><span>Daily note</span><kbd>N</kbd></button>
+            <button type="button" data-demo="timer" aria-pressed="false" disabled><span class="row-pointer" aria-hidden="true">›</span><span>Timer</span><kbd>P</kbd></button>
+            <button type="button" data-demo="keys" aria-pressed="false" disabled><span class="row-pointer" aria-hidden="true">›</span><span>tmux keys</span><kbd>b</kbd></button>
+          </div>
+          <div class="demo-detail" aria-live="polite" aria-atomic="true"><p data-demo-title>Shell, in the invoking directory.</p><p class="muted" data-demo-detail>Open a shell over your pane. The default shell popup is 75% wide and 75% high.</p><code data-demo-key>Direct binding: Prefix + T</code></div>
+        </div>
+        <p class="demo-caption"><span class="annotation">Browser illustration</span> <span data-demo-hint>Five default entries. In tmux, open the menu with Prefix + Enter.</span></p>
+      </div>
+    </section>
+
+    <div class="wrap flow" aria-label="How the toolkit is connected"><span><b>popups.tsv</b> registry</span><span aria-hidden="true">→</span><span>generated bindings</span><span aria-hidden="true">→</span><span>shared dispatch</span></div>
+
+    <section class="wrap section" aria-labelledby="registry-title">
+      <div class="section-heading"><p class="eyebrow">One place to edit</p><h2 id="registry-title">Add a row.<br> Get a popup.</h2></div>
+      <div class="explanation">
+        <p class="large">The menu and direct shortcuts come from the same rows. Give a tool a name, keys, dimensions and a command; the launcher handles the rest.</p>
+        <div class="registry-example"><div class="panel-heading"><span>popups.tsv</span><span>shell row · first 7 fields</span></div><pre tabindex="0" aria-label="The first seven tab-separated fields of the shell registry row">shell	T	Enter	shell	75%	75%	-</pre></div>
+        <p>Keep your changes in <code>~/.config/tmux-popups/popups.local.tsv</code>. A matching ID overrides the shipped row; a new ID adds an entry. Plugin updates leave that file alone.</p>
+        <a class="text-link" href="docs/#registry">Read the registry format <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+
+    <section class="wrap section coverage" aria-labelledby="coverage-title">
+      <div class="section-heading"><p class="eyebrow">Small by default</p><h2 id="coverage-title">Start with five.<br> Make it yours.</h2></div>
+      <div class="explanation">
+        <dl class="coverage-list">
+          <div><dt>On at first load</dt><dd>Help, shell, daily notes, timer and tmux keys. <code>Prefix + Enter</code> opens the quick menu.</dd></div>
+          <div><dt>25 shipped entries</dt><dd>Optional adapters include lazygit, Yazi, logs, a calculator and more. Enable the ones you use and install their dependencies.</dd></div>
+          <div><dt>Your own tools</dt><dd>Add local scripts with literal JSON arguments. Choose popup, window or command mode. Reuse a tool window when you opt in.</dd></div>
+          <div><dt>Check before you launch</dt><dd>Help and the CLI show dependency status. Doctor checks the configuration. Existing prefix bindings are skipped by default.</dd></div>
+        </dl>
+        <p class="muted">Session switching stays with tools such as tmux-sessionx. Optional adapters need their own app configuration; a dependency check doesn’t validate accounts or credentials.</p>
+      </div>
+    </section>
+
+    <section class="wrap section" id="install" aria-labelledby="install-title">
+      <div class="section-heading"><p class="eyebrow">Get the toolkit</p><h2 id="install-title">One line<br> in your config.</h2></div>
+      <div class="explanation">
+        <p>Add this to your tmux configuration with <a href="https://github.com/tmux-plugins/tpm">TPM</a>, alongside your other plugins:</p>
+        <div class="code-block"><pre id="tpm-code" tabindex="0" aria-label="TPM configuration">set -g @plugin 'PatrickFanella/tmux-popups'</pre><button type="button" class="copy" data-copy="tpm-code" hidden>Copy</button></div>
+        <p>Reload your tmux config, then press <kbd>Prefix + I</kbd> to install. Press <kbd>Prefix + Enter</kbd> to open the menu. Prefix means your configured tmux prefix, commonly <kbd>Ctrl + b</kbd>.</p>
+        <p class="muted">Installs from source. No tagged release is published yet. The launcher uses Bash and tmux; some optional helpers need Python 3 or other tools.</p>
+        <a class="text-link" href="docs/#install">Manual install, requirements and first run <span aria-hidden="true">→</span></a>
+        <p class="copy-status" role="status" data-copy-status></p>
+      </div>
+    </section>
+
+    <section class="wrap support" aria-labelledby="support-title"><div><p class="eyebrow">From SUBCULT</p><h2 id="support-title">Keep small tools moving.</h2><p>SUBCULT builds tmux-popups and other public tools. If you’d like to support the work, contributions go to the studio.</p><p>Need help with the toolkit? <a href="https://git.subcult.tv/PatrickFanella/tmux-popups/issues">Open an issue</a> or start with <a href="docs/#troubleshooting">troubleshooting</a>.</p></div><a class="button" href="https://subcult.tv/support">Support SUBCULT <span aria-hidden="true">↗</span></a></section>
+  </main>
+  <footer class="wrap footer"><a class="brand footer-brand" href="./"><img src="assets/mark.svg" width="32" height="32" alt=""><span>tmux-popups</span></a><nav aria-label="Footer"><a href="docs/">Docs</a><a href="https://git.subcult.tv/PatrickFanella/tmux-popups">Gitea</a><a href="https://github.com/PatrickFanella/tmux-popups">GitHub mirror</a><a href="https://subcult.tv/support">Support</a><a href="https://subcult.tv">SUBCULT</a></nav><p>Code <a href="https://github.com/PatrickFanella/tmux-popups/blob/main/LICENSE">MIT</a>. IBM Plex fonts: SIL Open Font License.</p></footer>
+</body>
+</html>

@@ -1,0 +1,4 @@
+http://tmux-popups.subcult.tv {
+    encode gzip zstd
+    reverse_proxy tmux-popups-site:8080
+}
