@@ -515,6 +515,33 @@ Run `scripts/check.sh` for syntax, ShellCheck and isolated launcher regressions.
 See [the verification guide](tests/README.md) for required tools, fixture isolation
 and the separate real-terminal release gates.
 
+### Diagnose effective settings without applying changes
+
+Run `scripts/doctor.sh` inside the affected tmux session. The report includes
+effective option values and their sources, the selected registry and user-script
+directory, each entry's file/line, launch mode, enablement, executable and
+dependency status, and the proposed binding plan. It uses the shared registry
+validator and execution resolver. Explicit executable arguments and shell
+expressions are not printed.
+
+Ordinary diagnosis generates into an owned temporary directory. It leaves the
+shared cache, effective bindings and ownership unchanged, including when a
+registry is invalid. A missing or stale cache is reported for a later reload
+through `tmux-popups.tmux`. TPM registration checks remain read-only.
+
+For a bounded input check, run this explicitly in the affected popup or window:
+
+```sh
+scripts/doctor.sh --input-check 10
+```
+
+Type `tmux-popups` and press Enter. The check prints the received byte values,
+TERM and tmux version. It waits at most the requested 1–30 seconds, defaults to
+10 seconds and requires an attached terminal. Ctrl-C cancels the check. A
+successful input check does not qualify an application's terminal queries or a
+provider. Compare popup and window modes and record terminal/application versions
+for failures. See the separate qualification gates in #12 and #24.
+
 ### Binding restoration on reload
 
 The plugin saves each effective prefix binding and its prior binding on the tmux
