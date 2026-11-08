@@ -639,8 +639,8 @@ The original quick menu stays available.
 
 The search list shows each enabled entry's title, direct/menu shortcuts, launch
 mode and availability. With `fzf` installed, type a query and press Enter to
-select. Escape, Ctrl-C and no matches close the picker without launching an
-entry. Without `fzf`, the same command opens a native tmux menu. No additional
+select. Escape or Ctrl-C closes the picker without launching an entry. Pressing
+Enter with no matches also returns without dispatch. Without `fzf`, the same command opens a native tmux menu. No additional
 runtime is required for the fallback.
 
 The `search` row uses foreground `command` mode because the launcher manages
