@@ -40,9 +40,8 @@ is_quit() {
 }
 
 close_popup_and_exit() {
-  if [[ -n "${TMUX:-}" ]]; then
-    close_origin_popup || true
-  fi
+  # Let the launcher's normal exit handling close this view. Explicitly closing
+  # our own popup first delivers HUP before the successful exit can complete.
   exit 0
 }
 
@@ -51,15 +50,20 @@ require_cmd ocq
 require_cmd node
 request_dir="$(mktemp -d "${TMPDIR:-/tmp}/tmux-popups-chat.XXXXXXXX")" || exit 1
 request_pid=""
-cleanup() {
+stop_request() {
   if [[ -n "$request_pid" ]]; then
-    # Monitor mode gives just this request a process group, including children.
-    kill -TERM -- "-$request_pid" 2>/dev/null || true
-    sleep 0.1
-    kill -KILL -- "-$request_pid" 2>/dev/null || true
+    # Stop only this request's group, including descendants of an exited leader.
+    if kill -0 -- "-$request_pid" 2>/dev/null; then
+      kill -TERM -- "-$request_pid" 2>/dev/null || true
+      sleep 0.1
+      kill -KILL -- "-$request_pid" 2>/dev/null || true
+    fi
     wait "$request_pid" 2>/dev/null || true
     request_pid=""
   fi
+}
+cleanup() {
+  stop_request
   rm -rf -- "$request_dir"
 }
 trap cleanup EXIT
@@ -82,9 +86,7 @@ ocq_with_spinner() {
   done
   wait "$request_pid"
   status=$?
-  # Also stop descendants left behind by a provider that has exited.
-  kill -TERM -- "-$request_pid" 2>/dev/null || true
-  request_pid=""
+  stop_request
   printf '\r\033[2K' >&2
   if (( status != 0 )); then
     printf 'ocq failed (status %s)\n' "$status" >&2
