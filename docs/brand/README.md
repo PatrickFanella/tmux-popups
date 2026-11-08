@@ -1,8 +1,8 @@
 # tmux-popups brand assets
 
-**Instrument Panel**, selected by the owner November 8, 2026. The new typography uses IBM Plex Sans Condensed for the name and headings, IBM Plex Sans for explanations, and IBM Plex Mono for commands and key hints. The fonts were selected by the agent after the owner requested alternatives and a ui-craft pass.
+**Instrument Panel**, selected by the owner November 8, 2026. The new typography uses IBM Plex Sans Condensed for the name and headings, IBM Plex Sans for explanations, and IBM Plex Mono for commands and key hints. The owner confirmed IBM Plex after the requested ui-craft comparison.
 
-Studio owns the [guide](https://git.subcult.tv/subculture-collective/subcult-tv/src/commit/e2bc671b756ff8d09bc2b26c5b927d46d2df36d1/studio/brands/tmux-popups/GUIDE.md), generator and masters in `subculture-collective/subcult-tv`. These files are unchanged copies from `studio/brands/tmux-popups/` at `e2bc671b756ff8d09bc2b26c5b927d46d2df36d1`. Do not edit the copies directly.
+Studio owns the [guide](https://git.subcult.tv/subculture-collective/subcult-tv/src/commit/f69b93c299216425dadb6f5c6117d24c2e36388d/studio/brands/tmux-popups/GUIDE.md), generator and masters in `subculture-collective/subcult-tv`. These files are unchanged copies from `studio/brands/tmux-popups/` at `f69b93c299216425dadb6f5c6117d24c2e36388d`. Do not edit the copies directly.
 
 The pane mark and graphite/mint/amber palette are unchanged. The lockups use the new condensed typography. SVG text is converted to paths, so readers do not need to install a font. The README selects a light-ink lockup for dark backgrounds and a dark-ink lockup for light backgrounds.
 
