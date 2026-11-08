@@ -94,12 +94,16 @@ shell_directory_format() {
 }
 
 popup_action() {
-  local id="$1" menu="${2:-off}" cmd prefix="#" field
+  local id="$1" menu="${2:-off}" cmd prefix="#" field executable
   [[ "$id" =~ ^[a-zA-Z0-9_-]+$ ]] || die "unsupported popup id: $id"
   # Menu parses its action once before run-shell expands formats. Defer the
   # snapshot so literal directory bytes never become shell source.
   [[ "$menu" == on ]] && prefix="##"
-  cmd="$(shell_quote "$root/scripts/run-popup.sh") $id --launch"
+  # The literal executable passes through run-shell formatting, plus the menu
+  # action's earlier formatting step. Keep hashes out of those expansions.
+  executable=${root//#/##}
+  [[ "$menu" != on ]] || executable=${executable//#/##}
+  cmd="$(shell_quote "$executable/scripts/run-popup.sh") $id --launch"
   for field in client_name session_id window_id pane_id; do
     cmd+=" ${prefix}{q:${field}}"
   done

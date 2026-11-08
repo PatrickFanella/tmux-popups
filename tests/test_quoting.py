@@ -37,6 +37,7 @@ class QuotingTests(unittest.TestCase):
         registry = self.home / "local with spaces and ' apostrophe; $.tsv"
         registry.write_text("yazi\tY\tr\tquote ' \" $HOME; $(touch injected)\t70%\t70%\t" + str(tool.relative_to(self.checkout)) + "\n")
         self.tmux("set-option", "-g", "@tmux-popups-local-registry", str(registry))
+        self.registry = registry
         return marker
 
     def test_quoted_direct_menu_window_popup_actions(self):
@@ -45,7 +46,8 @@ class QuotingTests(unittest.TestCase):
         for mode in ["window", "popup"]:
             for source in ["direct", "menu"]:
                 with self.subTest(mode=mode, source=source):
-                    self.tmux("set-option", "-g", "@tmux-popups-yazi-mode", mode)
+                    row = self.registry.read_text().splitlines()[0].split("\t")[:7]
+                    self.registry.write_text("\t".join(row + [mode]) + "\n")
                     self.load()
                     if source == "direct":
                         os.write(client, b"\x02Y")
@@ -57,6 +59,15 @@ class QuotingTests(unittest.TestCase):
                     self.wait_until(marker.exists)
                     marker.unlink()
         self.assertFalse((self.home / "injected").exists())
+
+    def test_literal_hashes_in_checkout_path(self):
+        destination = self.base / "plugin # and ## literal"
+        self.checkout.rename(destination)
+        self.checkout = destination
+        for policy in ["always", "on-success"]:
+            with self.subTest(close=policy):
+                self.tmux("set-option", "-g", "@tmux-popups-yazi-close", policy)
+                self.test_quoted_direct_menu_window_popup_actions()
 
     def test_quoted_reload_and_configurable_menu_command(self):
         working = self.home / r"pane with spaces and ' quote\; $(touch pane-injected)"
