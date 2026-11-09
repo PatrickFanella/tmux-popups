@@ -1,13 +1,24 @@
 # tmux-popups
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup.svg">
-  <img src="docs/brand/lockup-light.svg" alt="tmux-popups. Instrument Panel wordmark beside a popup over a terminal pane." height="80">
-</picture>
+<a href="https://tmux-popups.subcult.tv/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup.svg">
+    <img src="docs/brand/lockup-light.svg" alt="tmux-popups. Instrument Panel wordmark beside a popup over a terminal pane." height="80">
+  </picture>
+</a>
+
+**Tools up. Context stays.**
+
+A quick menu for your tmux tools. One TSV registry generates the menu and direct
+bindings, with shared shell helpers, dependency checks and local overrides.
+
+[Website](https://tmux-popups.subcult.tv/) ·
+[Docs](https://tmux-popups.subcult.tv/docs/) ·
+[Install](https://tmux-popups.subcult.tv/docs/#install) ·
+[Gitea](https://git.subcult.tv/PatrickFanella/tmux-popups) ·
+[Support SUBCULT](https://subcult.tv/support)
 
 A [SUBCULT](https://subcult.tv) project.
-
-Small tmux popup toolkit with a TSV registry, generated bindings, shared shell helpers, dependency checks, and optional local overrides.
 
 ![tmux-popups demo](assets/demo.gif)
 
@@ -25,8 +36,9 @@ Small tmux popup toolkit with a TSV registry, generated bindings, shared shell h
 Source and pull requests: [canonical Gitea repository](https://git.subcult.tv/PatrickFanella/tmux-popups).
 The GitHub repository is a push mirror used by the TPM shorthand below.
 See [migration and rollback](docs/migration.md) and [troubleshooting](docs/troubleshooting.md).
-The [product website source](site/README.md) includes the landing page,
-installation docs and local preview instructions.
+The [product website](https://tmux-popups.subcult.tv/) has
+[installation and usage docs](https://tmux-popups.subcult.tv/docs/).
+See the [website source](site/README.md) for local preview instructions.
 
 ## Install with TPM
 
