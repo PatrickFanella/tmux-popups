@@ -33,6 +33,13 @@
       "target": "docs/brand/mark-mono-light.svg",
       "sha256": "5cddcc8c525ce277e5fd46fef4f2e03ec6f28867e87d9b49bbecfe3e9a301dca",
       "transformation": "unchanged copy"
+    },
+    {
+      "source": "studio/brands/tmux-popups/social/avatar.png",
+      "target": "docs/brand/avatar.png",
+      "sha256": "ada2472fd366af3e2c0d4dea493f14b0ea9fcc480eb382800ccd7e21875f9268",
+      "transformation": "unchanged copy",
+      "usage": "Gitea repository avatar; 512 by 512 PNG"
     }
   ]
 }
