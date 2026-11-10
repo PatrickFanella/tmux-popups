@@ -459,11 +459,13 @@ Do not source the generated cache directly; that bypasses conflict reconciliatio
 
 ## CI
 
-The canonical Gitea workflow, `.gitea/workflows/ci.yml`, runs `scripts/check.sh`
-for pull requests and pushes to `main`. It runs Bash syntax checks, ShellCheck
-and the isolated regression suite in `node:24-bookworm-slim`, installing Git,
-Python 3, ShellCheck and tmux. The GitHub mirror workflow runs the same script
-on an Ubuntu runner.
+Pull requests are verified on the public GitHub copy by
+`.github/workflows/mirror-ci.yml`, which runs on every pushed branch except
+`main`. Its `Mirror CI gate` result is reported back to the Gitea pull request
+as `GitHub CI / Mirror CI gate`. After merge, the Gitea workflow
+`.gitea/workflows/ci.yml` runs the same checks on `main`. Both run Bash syntax
+checks, ShellCheck, the isolated regression suite and the site checks in
+`node:24-bookworm-slim`, installing Git, Python 3, ShellCheck and tmux.
 
 Locally, install those verification tools plus GNU `timeout`, then run:
 

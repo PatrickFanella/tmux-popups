@@ -3,14 +3,14 @@ name: Launcher verification
 on:
   push:
     branches: [main]
-  pull_request:
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Only main pushes run here; keep each main commit's result.
+  cancel-in-progress: false
 
 jobs:
   shell:

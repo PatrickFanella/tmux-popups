@@ -15,8 +15,9 @@ popup input, unknown entries and tool failure status. The terminal fixtures use 
 100-column, 40-row pseudoterminal so the complete default menu fits. They wait for
 rendered fixture prompts before sending input.
 
-Gitea Actions uses `.gitea/workflows/ci.yml`; the GitHub publishing copy runs the
-same command. Hosted results qualify the exact commit that ran. These controlled
+Pull requests run this command on the public GitHub copy through
+`.github/workflows/mirror-ci.yml`; Gitea Actions runs it on `main` through
+`.gitea/workflows/ci.yml`. Hosted results qualify the exact commit that ran. These controlled
 terminal checks do not complete the real-terminal, multiple-client and optional
 integration qualification in issue #24, or authorize a release under #25.
 
